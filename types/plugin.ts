@@ -10,9 +10,12 @@ export interface PluginManifest {
   id: string
   name: string
   version: string
-  category: 'appearance' | 'theme' | 'player' | 'feature' | 'source'
+  category: 'appearance' | 'theme' | 'player' | 'feature' | 'source' | 'ui'
   priority: number
   builtin?: boolean
+  tier?: 'core' | 'builtin' | 'standard' | 'community'
+  defaultEnabled?: boolean
+  uiSlots?: string[]
   description?: string
   config?: {
     schema: Record<string, PluginConfigField>

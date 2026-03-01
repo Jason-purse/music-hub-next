@@ -46,9 +46,9 @@ export function getPluginById(id: string): InstalledPlugin | null {
   return row ? rowToPlugin(row) : null
 }
 
-// ── Write ────────────────────────────────────────────────────────────────────
+// ── Write ────────────────────────────────────��───────────────────────────────
 
-export function upsertPlugin(plugin: PluginManifest): InstalledPlugin {
+export function upsertPlugin(plugin: PluginManifest, defaultEnabled = true): InstalledPlugin {
   const db = getDb()
   const existing = getPluginById(plugin.id)
   if (existing) return existing
@@ -61,7 +61,7 @@ export function upsertPlugin(plugin: PluginManifest): InstalledPlugin {
     plugin.name,
     plugin.version || '1.0.0',
     plugin.category || 'feature',
-    1,
+    defaultEnabled ? 1 : 0,
     plugin.priority ?? 10,
     '{}',
     JSON.stringify(plugin),
@@ -81,6 +81,12 @@ export function updatePlugin(id: string, patch: { enabled?: boolean; config?: Re
     db.prepare('UPDATE plugins SET config = ? WHERE id = ?').run(JSON.stringify(patch.config), id)
   }
   return getPluginById(id)
+}
+
+export function updatePluginManifest(id: string, manifest: PluginManifest): void {
+  const db = getDb()
+  db.prepare('UPDATE plugins SET manifest = ?, name = ?, version = ?, category = ?, priority = ? WHERE id = ?')
+    .run(JSON.stringify(manifest), manifest.name, manifest.version || '1.0.0', manifest.category || 'feature', manifest.priority ?? 0, id)
 }
 
 export function deletePlugin(id: string): boolean {
@@ -107,6 +113,9 @@ function rowToPlugin(row: any): InstalledPlugin {
     priority: row.priority,
     enabled: !!row.enabled,
     builtin: manifest.builtin,
+    tier: manifest.tier,
+    defaultEnabled: manifest.defaultEnabled,
+    uiSlots: manifest.uiSlots,
     description: manifest.description,
     config: manifest.config,
     slots: manifest.slots,
