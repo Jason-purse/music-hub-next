@@ -115,7 +115,7 @@ export async function incrementPlayCount(id: string): Promise<void> {
   const song = db.songs.find(s => s.id === id);
   if (song) {
     song.play_count = (song.play_count || 0) + 1;
-    saveDB(db, `stat: play ${song.title}`).catch(() => {});
+    await saveDB(db, `stat: play ${song.title}`); // 必须 await，防止 Vercel serverless 提前退出
   }
 }
 

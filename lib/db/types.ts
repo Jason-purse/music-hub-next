@@ -5,6 +5,17 @@
  * 业务层只依赖这里的类型，永远不感知底层存储是什么。
  */
 
+export interface AiAnalysis {
+  mood: string;        // 情绪标签，如 "抒情、怀旧、温暖"
+  energy: string;      // 能量：低 / 中 / 高
+  tempo: string;       // 节奏：慢 / 中等 / 快
+  genres: string[];    // 曲风标签
+  era_context: string; // 年代背景简述
+  listen_scene: string;// 适合场景，如 "睡前、驾车、雨天"
+  summary: string;     // 一句话介绍
+  analyzed_at: string;
+}
+
 export interface Song {
   id: string;
   title: string;
@@ -19,6 +30,11 @@ export interface Song {
   play_count: number;
   like_count: number;
   created_at: string;
+  ai_analysis?: AiAnalysis; // AI 分析结果（懒加载，分析后写入）
+  lyrics?: string;
+  file_size?: number;
+  source?: string;
+  updated_at?: string;
 }
 
 export interface Playlist {

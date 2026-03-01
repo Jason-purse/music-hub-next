@@ -3,6 +3,7 @@ import { Song } from '@/lib/github-db';
 import { usePlayerStore } from '@/stores/player';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 
 function fmt(s: number) {
@@ -89,7 +90,13 @@ export default function SongList({ songs, showRank = false }: Props) {
             {/* 信息 */}
             <div className="flex-1 min-w-0">
               <div className={`text-sm font-medium truncate transition-colors ${active ? 'text-indigo-600' : 'text-gray-800 group-hover:text-gray-900'}`}>
-                {song.title}
+                <Link
+                  href={`/song/${song.id}`}
+                  onClick={e => e.stopPropagation()}
+                  className="hover:underline"
+                >
+                  {song.title}
+                </Link>
               </div>
               <div className="text-xs text-gray-400 truncate">
                 {song.artist}{song.album ? ` · ${song.album}` : ''}
