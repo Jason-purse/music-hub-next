@@ -136,7 +136,7 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-6">
             <div>
               <h2 className="font-semibold mb-1">榜单配置</h2>
-              <p className="text-xs text-gray-400">调整各榜单的展示数量和开关，保存后立即生效。</p>
+              <p className="text-xs text-gray-400">控制排行榜页面显示哪些榜单及每榜展示数量。开关关闭 = 该榜单从页面隐藏，数据不受影响。</p>
             </div>
 
             {/* 各榜单 */}
@@ -150,11 +150,16 @@ export default function AdminPage() {
                     <div className="text-sm font-medium">{labels[key]}</div>
                     <div className="text-xs text-gray-400">{descs[key]}</div>
                   </div>
-                  {/* 开关 */}
-                  <button onClick={() => setRankings((r: any) => ({ ...r, rankings: { ...r.rankings, [key]: { ...chart, enabled: !chart.enabled } } }))}
-                    className={`w-10 h-6 rounded-full transition shrink-0 ${chart.enabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
-                    <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform mx-1 ${chart.enabled ? 'translate-x-4' : ''}`} />
-                  </button>
+                  {/* 开关 + 状态文字 */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs ${chart.enabled ? 'text-indigo-500' : 'text-gray-300'}`}>
+                      {chart.enabled ? '页面显示' : '已隐藏'}
+                    </span>
+                    <button onClick={() => setRankings((r: any) => ({ ...r, rankings: { ...r.rankings, [key]: { ...chart, enabled: !chart.enabled } } }))}
+                      className={`w-10 h-6 rounded-full transition shrink-0 ${chart.enabled ? 'bg-indigo-500' : 'bg-gray-200'}`}>
+                      <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform mx-1 ${chart.enabled ? 'translate-x-4' : ''}`} />
+                    </button>
+                  </div>
                   {/* TOP N */}
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-xs text-gray-400">TOP</span>

@@ -48,6 +48,7 @@ export interface Block {
   type: string
   props: Record<string, any>
   style?: BlockStyle        // 可选外壳样式，由 SlotRenderer 处理，插件不感知
+  label?: string            // 用户自定义显示名（TOC/画布标识，不影响插件渲染）
 }
 
 export type FieldType = 'text' | 'number' | 'color' | 'switch' | 'select' | 'textarea' | 'datasource'

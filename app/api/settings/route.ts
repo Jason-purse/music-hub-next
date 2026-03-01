@@ -5,7 +5,8 @@ import { verifyAdminToken } from '@/lib/auth';
 
 export async function GET() {
   const db = await getDB();
-  const settings = db.settings ?? DEFAULT_SETTINGS;
+  // 深度 merge：DEFAULT_SETTINGS 保底，db.settings 中的值覆盖（避免新字段缺失）
+  const settings = { ...DEFAULT_SETTINGS, ...(db.settings ?? {}), rankings: { ...DEFAULT_SETTINGS.rankings, ...(db.settings?.rankings ?? {}) } };
   return NextResponse.json(settings);
 }
 

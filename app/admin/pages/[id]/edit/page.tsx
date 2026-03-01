@@ -179,11 +179,12 @@ function FieldInput({ field, value, onChange }: { field: FieldDef; value: any; o
 // ─── 右栏：配置面板 ─────────────────────────────────────────────────────────
 
 function ConfigPanel({
-  block, onUpdate, onUpdateStyle, onDelete, onClose
+  block, onUpdate, onUpdateStyle, onUpdateLabel, onDelete, onClose
 }: {
   block: Block
   onUpdate: (p: Record<string, any>) => void
   onUpdateStyle: (s: Partial<import('@/lib/blocks/types').BlockStyle>) => void
+  onUpdateLabel: (label: string) => void
   onDelete: () => void
   onClose: () => void
 }) {
@@ -201,6 +202,21 @@ function ConfigPanel({
         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* ── 节点名称（TOC/画布标识） ─────────────────────── */}
+        <div>
+          <label className="text-xs font-medium text-gray-500 block mb-1.5">
+            节点名称
+            <span className="ml-1 text-gray-300 font-normal">（用于时间轴目录、画布标识）</span>
+          </label>
+          <input
+            type="text"
+            value={block.label || ''}
+            onChange={e => onUpdateLabel(e.target.value)}
+            placeholder={`默认：${plugin.label}`}
+            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+          />
+        </div>
+        <div className="border-t border-gray-100" />
         {plugin.fields.map(field => (
           <div key={field.name}>
             <label className="text-xs font-medium text-gray-500 block mb-1.5">{field.label}</label>
@@ -326,21 +342,38 @@ function ConfigPanel({
 
 const BLOCK_CATEGORIES = [
   {
-    label: '内容类',
-    types: ['hero-banner', 'search-bar'],
+    label: '🏗 结构',
+    desc: '页面骨架与视觉焦点',
+    types: ['hero-banner'],
   },
   {
-    label: '音乐类',
-    types: ['chart-list', 'decade-stack', 'playlist-grid', 'stats-card'],
+    label: '🎵 音乐',
+    desc: '榜单、年代、歌单',
+    types: ['chart-list', 'decade-stack', 'playlist-grid'],
   },
   {
-    label: '布局',
+    label: '📊 数据',
+    desc: '统计与概览',
+    types: ['stats-card'],
+  },
+  {
+    label: '🔍 交互',
+    desc: '搜索与导航',
+    types: ['search-bar'],
+  },
+  {
+    label: '⬜ 间距',
+    desc: '空白与分隔线',
     types: ['spacer'],
   },
 ]
 
 function BlockLibrary() {
   const allPlugins = blockMetaRegistry.getAll()
+  // 内置分类里已列出的 block types
+  const builtinTypes = new Set(BLOCK_CATEGORIES.flatMap(c => c.types))
+  // 社区插件 = 注册了但不在内置分类里的
+  const communityPlugins = allPlugins.filter(p => !builtinTypes.has(p.type))
 
   return (
     <Droppable droppableId="palette" isDropDisabled={true} direction="vertical">
@@ -348,16 +381,20 @@ function BlockLibrary() {
         <div
           ref={provided.innerRef}
           {...provided.droppableProps}
-          className="flex-1 overflow-y-auto px-3 py-3 space-y-4"
+          className="flex-1 overflow-y-auto px-3 py-3 space-y-5"
         >
+          {/* ── 内置分类 ───────────────────────── */}
           {BLOCK_CATEGORIES.map(cat => {
             const metas = cat.types.map(t => blockMetaRegistry.get(t)).filter(Boolean) as BlockMeta[]
+            if (metas.length === 0) return null
             return (
               <div key={cat.label}>
-                <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">{cat.label}</div>
+                <div className="mb-2 px-1">
+                  <div className="text-xs font-semibold text-gray-600">{cat.label}</div>
+                  {'desc' in cat && <div className="text-[10px] text-gray-300 mt-0.5">{(cat as any).desc}</div>}
+                </div>
                 <div className="space-y-1.5">
                   {metas.map((meta, index) => {
-                    // global index across all categories for Draggable index
                     const globalIndex = allPlugins.findIndex(p => p.type === meta.type)
                     return (
                       <Draggable
@@ -378,9 +415,10 @@ function BlockLibrary() {
                                 }`}
                             >
                               <span className="text-xl shrink-0">{meta.icon}</span>
-                              <span className="text-sm font-medium text-gray-700">{meta.label}</span>
+                              <div className="min-w-0">
+                                <div className="text-sm font-medium text-gray-700 leading-tight">{meta.label}</div>
+                              </div>
                             </div>
-                            {/* 拖拽时在原位置保留占位克隆，避免积木库塌陷 */}
                             {snapshot.isDragging && (
                               <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-gray-200 bg-white opacity-30 select-none">
                                 <span className="text-xl shrink-0">{meta.icon}</span>
@@ -396,6 +434,56 @@ function BlockLibrary() {
               </div>
             )
           })}
+
+          {/* ── 社区插件（动态，安装后出现）───── */}
+          {communityPlugins.length > 0 && (
+            <div>
+              <div className="mb-2 px-1">
+                <div className="text-xs font-semibold text-gray-600">🧩 社区插件</div>
+                <div className="text-[10px] text-gray-300 mt-0.5">已安装的第三方积木</div>
+              </div>
+              <div className="space-y-1.5">
+                {communityPlugins.map((meta, index) => {
+                  const globalIndex = allPlugins.findIndex(p => p.type === meta.type)
+                  return (
+                    <Draggable
+                      key={`palette-${meta.type}`}
+                      draggableId={`palette-${meta.type}`}
+                      index={globalIndex >= 0 ? globalIndex : index + 100}
+                    >
+                      {(provided, snapshot) => (
+                        <>
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition select-none
+                              ${snapshot.isDragging
+                                ? 'opacity-60 border-purple-300 bg-purple-50'
+                                : 'border-purple-100 bg-white hover:border-purple-300 hover:bg-purple-50/50'
+                              }`}
+                          >
+                            <span className="text-xl shrink-0">{meta.icon}</span>
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-gray-700 leading-tight">{meta.label}</div>
+                              <div className="text-[10px] text-purple-300">社区</div>
+                            </div>
+                          </div>
+                          {snapshot.isDragging && (
+                            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-purple-100 bg-white opacity-30 select-none">
+                              <span className="text-xl shrink-0">{meta.icon}</span>
+                              <span className="text-sm font-medium text-gray-700">{meta.label}</span>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </Draggable>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {provided.placeholder}
         </div>
       )}
@@ -491,7 +579,12 @@ function CanvasSlot({
                       >
                         ⠿
                       </span>
-                      <span className="text-xs text-gray-500">{blockMetaRegistry.get(block.type)?.label}</span>
+                      <span className="text-xs text-gray-500">
+                        {block.label
+                          ? <><span className="text-indigo-400">{block.label}</span><span className="text-gray-300 ml-1">· {blockMetaRegistry.get(block.type)?.label}</span></>
+                          : blockMetaRegistry.get(block.type)?.label
+                        }
+                      </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(slotName, block.id) }}
                         className="ml-auto text-gray-300 hover:text-red-400 text-xs px-1"
@@ -720,6 +813,20 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
       if (idx >= 0) {
         const newBlocks = [...blocks]
         newBlocks[idx] = { ...newBlocks[idx], style: { ...newBlocks[idx].style, ...style } }
+        newSlots[slot] = newBlocks
+      }
+    }
+    setPage({ ...page, slots: newSlots })
+  }
+
+  function updateBlockLabel(label: string) {
+    if (!page || !selectedId) return
+    const newSlots = { ...page.slots }
+    for (const [slot, blocks] of Object.entries(newSlots)) {
+      const idx = blocks.findIndex(b => b.id === selectedId)
+      if (idx >= 0) {
+        const newBlocks = [...blocks]
+        newBlocks[idx] = { ...newBlocks[idx], label: label || undefined }
         newSlots[slot] = newBlocks
       }
     }
@@ -984,6 +1091,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                           block={selectedBlock}
                           onUpdate={props => updateBlockProps(props)}
                           onUpdateStyle={style => updateBlockStyle(style)}
+                          onUpdateLabel={label => updateBlockLabel(label)}
                           onDelete={() => { const slot = findSlotForBlock(selectedId!); if (slot && selectedId) deleteBlock(slot, selectedId) }}
                           onClose={() => setSelectedId(null)}
                         />

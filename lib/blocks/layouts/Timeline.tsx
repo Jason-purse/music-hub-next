@@ -4,26 +4,15 @@ import { SlotRenderer } from '../SlotRenderer'
 import { LayoutProps } from './index'
 import { TimelineNav } from './TimelineNav'
 import { responsiveGap, containerStyle } from './utils'
+import { resolveBlockTitle } from '../labels'
 import type { Block } from '../types'
 
-// 从 block.props 提取可读标题，fallback 到序号
-function blockTitle(block: Block, index: number): string {
-  const p = block.props || {}
-  return (
-    p.title   ||
-    p.label   ||
-    p.heading ||
-    p.name    ||
-    p.decade  ||   // decade-stack 用
-    `节点 ${index + 1}`
-  )
-}
 
 export function Timeline({ slots, gutter = 24, padding = 32 }: LayoutProps) {
   const blocks = slots.timeline || []
 
   // 给 TOC 准备纯 JSON（可序列化，安全传给 Client Component）
-  const tocItems = blocks.map((b, i) => ({ id: b.id, label: blockTitle(b, i) }))
+  const tocItems = blocks.map((b, i) => ({ id: b.id, label: resolveBlockTitle(b, i) }))
 
   return (
     <div style={containerStyle(padding)}>
