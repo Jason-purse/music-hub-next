@@ -1,8 +1,8 @@
 'use client'
 import { createContext, useContext, useEffect, useState } from 'react'
 
-export type ColorScheme = 'light' | 'dark' | 'system'
-export type ResolvedScheme = 'light' | 'dark'
+export type ColorScheme = 'light' | 'dark' | 'eye-care' | 'system'
+export type ResolvedScheme = 'light' | 'dark' | 'eye-care'
 
 interface AppearanceCtx {
   colorScheme: ColorScheme
@@ -18,15 +18,25 @@ const AppearanceContext = createContext<AppearanceCtx>({
 
 function applyScheme(scheme: ColorScheme): ResolvedScheme {
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  const isDark = scheme === 'dark' || (scheme === 'system' && prefersDark)
-  document.documentElement.classList.toggle('dark', isDark)
+  let resolved: ResolvedScheme
+
+  if (scheme === 'system') {
+    resolved = prefersDark ? 'dark' : 'light'
+  } else {
+    resolved = scheme as ResolvedScheme
+  }
+
+  // 清除所有模式 class，再加当前的
+  document.documentElement.classList.remove('dark', 'eye-care')
+  if (resolved === 'dark') document.documentElement.classList.add('dark')
+  if (resolved === 'eye-care') document.documentElement.classList.add('eye-care')
 
   // dispatch 自定义事件，WC 插件可监听
   window.dispatchEvent(new CustomEvent('colorscheme:change', {
-    detail: { scheme, resolved: isDark ? 'dark' : 'light' }
+    detail: { scheme, resolved }
   }))
 
-  return isDark ? 'dark' : 'light'
+  return resolved
 }
 
 function persistScheme(scheme: ColorScheme) {

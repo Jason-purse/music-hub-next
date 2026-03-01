@@ -90,7 +90,7 @@ export default function Navbar() {
         />
       </form>
 
-      {/* 主题切换按钮 */}
+      {/* 显示模式切换按钮 */}
       <div className="hidden md:flex ml-2">
         <AppearanceToggle />
       </div>
@@ -131,7 +131,7 @@ export default function Navbar() {
             );
           })}
           <div className="flex items-center px-3 py-2">
-            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">主题</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">显示模式</span>
             <AppearanceToggle />
           </div>
         </div>

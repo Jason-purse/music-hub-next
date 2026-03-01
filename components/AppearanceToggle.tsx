@@ -5,16 +5,19 @@ import type { ColorScheme } from './AppearanceProvider'
 const ICONS: Record<ColorScheme, string> = {
   light: '☀️',
   dark: '🌙',
+  'eye-care': '🌿',
   system: '💻',
 }
 const LABELS: Record<ColorScheme, string> = {
-  light: '浅色',
-  dark: '深色',
+  light: '浅色模式',
+  dark: '深色模式',
+  'eye-care': '护眼模式',
   system: '跟随系统',
 }
 const NEXT: Record<ColorScheme, ColorScheme> = {
   light: 'dark',
-  dark: 'system',
+  dark: 'eye-care',
+  'eye-care': 'system',
   system: 'light',
 }
 

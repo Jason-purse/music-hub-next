@@ -15,7 +15,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const cookieStore = await cookies();
   const scheme = cookieStore.get('music-color-scheme')?.value ?? 'system';
   // system 时不加 class，让 CSS media query 兜底；dark 时加 dark class
-  const htmlClass = scheme === 'dark' ? 'dark' : '';
+  const htmlClass = scheme === 'dark' ? 'dark' : scheme === 'eye-care' ? 'eye-care' : '';
 
   return (
     <html lang="zh-CN" className={htmlClass} suppressHydrationWarning>

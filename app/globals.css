@@ -135,3 +135,35 @@ body {
   background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
   background-size: 800px 100%;
 }
+
+/* 护眼模式：暖米色 + 琥珀色，减少蓝光 */
+.eye-care {
+  --music-bg: #f5f0e6;
+  --music-bg-secondary: #ede8d8;
+  --music-surface: #ede8d8;
+  --music-surface-hover: #e5ddc8;
+
+  --music-text: #3a2e1e;
+  --music-text-muted: #7a6b52;
+  --music-text-subtle: #a89878;
+
+  --music-border: #d5c9b0;
+  --music-border-strong: #c0b098;
+
+  --music-accent: #b8732a;
+  --music-accent-hover: #9a5e20;
+  --music-accent-light: #f5e8d0;
+
+  --music-success: #5a8a4a;
+  --music-warning: #c08030;
+  --music-danger: #c05040;
+
+  --background: var(--music-bg);
+  --foreground: var(--music-text);
+}
+
+/* 护眼模式下 skeleton */
+.eye-care .skeleton {
+  background: linear-gradient(90deg, #e8e0cc 25%, #ddd5be 50%, #e8e0cc 75%);
+  background-size: 800px 100%;
+}
