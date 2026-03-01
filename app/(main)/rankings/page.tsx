@@ -8,9 +8,9 @@ export default async function RankingsPage() {
 
   return (
     <RankingsClient
-      hot={{   ...hot,   icon: '🔥', color: 'rgb(239,68,68)' }}
-      liked={{  ...liked,  icon: '❤️', color: 'rgb(236,72,153)' }}
-      newest={{ ...newest, icon: '✨', color: 'rgb(34,197,94)' }}
+      hot={{   ...(hot   as any), icon: '🔥', color: 'rgb(239,68,68)'   }}
+      liked={{  ...(liked  as any), icon: '❤️', color: 'rgb(236,72,153)' }}
+      newest={{ ...(newest as any), icon: '✨', color: 'rgb(34,197,94)'  }}
       byDecade={byDecade as Record<string, any[]>}
       decadeLimit={config.byDecade.limitPerDecade}
       decadeEnabled={config.byDecade.enabled}

@@ -154,7 +154,7 @@ function ChartSection({
 
       {/* 歌曲列表 */}
       <div className="mt-3">
-        <SongList songs={songs} showRank={showRank} />
+        <SongList songs={songs as any[]} showRank={showRank} />
       </div>
 
       {/* 结尾哨兵 + 完成微庆祝 */}
@@ -275,7 +275,7 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
                       🎵 {LABELS[decade] ?? decade}
                       <span className="text-xs text-gray-400 font-normal ml-2">TOP {decadeLimit}</span>
                     </h3>
-                    <SongList songs={songs as Song[]} showRank />
+                    <SongList songs={songs as any[]} showRank />
                   </div>
                 );
               })}

@@ -39,25 +39,23 @@ const fields: FieldDef[] = [
     name: 'height',
     label: '高度 (px)',
     type: 'number',
-    default: 40,
+    defaultValue: 40,
     description: '空白区域高度，范围 8–200px',
   },
   {
     name: 'showLine',
     label: '显示分割线',
     type: 'switch',
-    default: false,
+    defaultValue: false,
     description: '在空白中央显示一条浅色分割线',
   },
 ]
 
 export const SpacerBlock: BlockPlugin = {
-  type:        'spacer',
-  name:        '间距填充',
-  icon:        '↕️',
-  category:    '布局',
-  description: '在块之间添加可调节高度的空白区域，或带分割线的视觉分隔',
-  Component:   SpacerComponent,
+  type:         'spacer',
+  label:        '间距填充',
+  icon:         '↕️',
+  Component:    SpacerComponent,
   fields,
   defaultProps: { height: 40, showLine: false },
 }

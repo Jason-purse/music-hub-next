@@ -21,6 +21,8 @@ interface PageData {
   layout: LayoutType
   slots: Record<string, Block[]>
   published: boolean
+  layoutConfig?: { gutter?: number; padding?: number }
+  draft?: { layout: LayoutType; slots: Record<string, Block[]>; layoutConfig?: { gutter?: number; padding?: number } }
 }
 
 function genId() { return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
@@ -857,7 +859,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
             {allLayoutOptions.map(l => (
               <button
                 key={l.value}
-                onClick={() => handleLayoutChange(l.value)}
+                onClick={() => handleLayoutChange(l.value as LayoutType)}
                 title={l.label}
                 className={`px-2 py-1.5 text-xs rounded-lg border transition ${
                   page.layout === l.value

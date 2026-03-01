@@ -10,13 +10,14 @@ function fmt(s: number) {
   return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 }
 
+import type { Variants } from 'framer-motion';
 interface Props { songs: Song[]; showRank?: boolean; }
 
-const container = {
+const container: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.045 } },
 };
-const item = {
+const item: Variants = {
   hidden: { opacity: 0, y: 16 },
   show:   { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 340, damping: 26 } },
 };

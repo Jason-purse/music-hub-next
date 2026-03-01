@@ -13,7 +13,8 @@ function extractColor(src: string): Promise<string> {
         c.width = c.height = 1;
         const ctx = c.getContext('2d')!;
         ctx.drawImage(img, 0, 0, 1, 1);
-        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        const [r, g, b] = [d[0], d[1], d[2]];
         resolve(`${r},${g},${b}`);
       } catch { resolve('99,102,241'); }
     };

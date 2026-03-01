@@ -50,7 +50,7 @@ export interface Block {
   style?: BlockStyle        // 可选外壳样式，由 SlotRenderer 处理，插件不感知
 }
 
-export type FieldType = 'text' | 'number' | 'color' | 'switch' | 'select' | 'textarea'
+export type FieldType = 'text' | 'number' | 'color' | 'switch' | 'select' | 'textarea' | 'datasource'
 
 export interface FieldDef {
   name: string
@@ -58,6 +58,7 @@ export interface FieldDef {
   type: FieldType
   options?: { label: string; value: string }[]  // select 专用
   defaultValue?: any
+  description?: string  // 字段说明文字（可选）
 }
 
 export interface BlockPlugin<TProps = any> {

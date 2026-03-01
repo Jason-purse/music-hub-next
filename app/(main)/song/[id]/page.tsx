@@ -157,7 +157,7 @@ function AiAnalysisCard({ songId, initial }: { songId: string; initial?: AiAnaly
 export default function SongDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const { playSong } = usePlayerStore()
+  const play = usePlayerStore(s => s.play)
   const [song, setSong] = useState<Song | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -240,7 +240,7 @@ export default function SongDetailPage() {
 
         {/* 播放按钮 */}
         <button
-          onClick={() => playSong(song as any)}
+          onClick={() => play(song as any)}
           className="mt-5 w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 active:scale-95 transition flex items-center justify-center gap-2"
         >
           <span className="text-lg">▶</span> 立即播放
