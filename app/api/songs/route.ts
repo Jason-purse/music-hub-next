@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     const sort     = searchParams.get('sort')     || 'created_at';
     const decade   = searchParams.get('decade')   || '';
     const category = searchParams.get('category') || '';
+    const tag      = searchParams.get('tag')      || '';  // 按 tag 过滤（支持粤语/流行等细分）
 
     const db = await getDB();
     let songs = [...db.songs];
@@ -19,6 +20,10 @@ export async function GET(req: NextRequest) {
     // 服务端筛选
     if (decade)   songs = songs.filter(s => s.decade   === decade);
     if (category) songs = songs.filter(s => s.category === category);
+    if (tag) songs = songs.filter(s => {
+      const tags = Array.isArray(s.tags) ? s.tags : String(s.tags || '').split(',').map(t => t.trim());
+      return tags.some(t => t.toLowerCase() === tag.toLowerCase());
+    });
 
     // 排序
     if (sort === 'play_count')  songs.sort((a, b) => b.play_count - a.play_count);

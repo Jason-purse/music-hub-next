@@ -3,13 +3,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import SongList from '@/components/SongList';
 import { Song } from '@/lib/github-db';
 
-const DECADES    = ['', '80s', '90s', '00s', '10s', '20s'];
-const CATEGORIES = ['', '经典', '粤语', '国语', '摇滚', '流行', '抒情', '民谣'];
+const DECADES = ['', '80s', '90s', '00s', '10s', '20s'];
+
+// 分类现在走 tag 过滤，与 db.json 实际 tags 对齐
+const TAG_CATEGORIES = ['', '经典', '流行', '粤语', '摇滚', '情歌', '怀旧', '国风', '治愈'];
 const LIMIT = 20;
 
 export default function DiscoverPage() {
   const [decade,   setDecade]   = useState('');
-  const [category, setCategory] = useState('');
+  const [tag,      setTag]      = useState('');   // 改为 tag 过滤
   const [songs,    setSongs]    = useState<Song[]>([]);
   const [total,    setTotal]    = useState(0);
   const [page,     setPage]     = useState(1);
@@ -17,16 +19,7 @@ export default function DiscoverPage() {
   const [hasMore,  setHasMore]  = useState(true);
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // 重置并加载第一页
-  const reset = useCallback((d: string, c: string) => {
-    setSongs([]);
-    setPage(1);
-    setHasMore(true);
-    loadPage(1, d, c, true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadPage = useCallback(async (p: number, d: string, c: string, replace = false) => {
+  const loadPage = useCallback(async (p: number, d: string, t: string, replace = false) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -35,7 +28,7 @@ export default function DiscoverPage() {
         sort: 'created_at',
       });
       if (d) params.set('decade', d);
-      if (c) params.set('category', c);
+      if (t) params.set('tag', t);       // tag 参数
       const res  = await fetch(`/api/songs?${params}`);
       const data = await res.json();
       const list: Song[] = data.songs || [];
@@ -47,19 +40,19 @@ export default function DiscoverPage() {
     }
   }, []);
 
-  // 初次加载
+  const reset = useCallback((d: string, t: string) => {
+    setSongs([]);
+    setPage(1);
+    setHasMore(true);
+    loadPage(1, d, t, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => { loadPage(1, '', '', true); }, [loadPage]);
 
-  // 筛选变化
-  const handleFilter = (type: 'decade' | 'category', val: string) => {
-    const d = type === 'decade'   ? val : decade;
-    const c = type === 'category' ? val : category;
-    if (type === 'decade')   setDecade(val);
-    if (type === 'category') setCategory(val);
-    reset(d, c);
-  };
+  const handleDecade = (val: string) => { setDecade(val); reset(val, tag); };
+  const handleTag    = (val: string) => { setTag(val);    reset(decade, val); };
 
-  // IntersectionObserver 触底加载
   useEffect(() => {
     const el = loaderRef.current;
     if (!el) return;
@@ -67,12 +60,12 @@ export default function DiscoverPage() {
       if (entries[0].isIntersecting && hasMore && !loading) {
         const nextPage = page + 1;
         setPage(nextPage);
-        loadPage(nextPage, decade, category);
+        loadPage(nextPage, decade, tag);
       }
     }, { threshold: 0.1 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [hasMore, loading, page, decade, category, loadPage]);
+  }, [hasMore, loading, page, decade, tag, loadPage]);
 
   const pill = (active: boolean) =>
     `px-3 py-1 rounded-full text-sm border transition cursor-pointer select-none ${
@@ -91,15 +84,15 @@ export default function DiscoverPage() {
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-xs text-gray-400 w-8">年代</span>
           {DECADES.map(d => (
-            <span key={d} onClick={() => handleFilter('decade', d)} className={pill(!d ? !decade : decade === d)}>
+            <span key={d} onClick={() => handleDecade(d)} className={pill(!d ? !decade : decade === d)}>
               {d || '全部'}
             </span>
           ))}
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-xs text-gray-400 w-8">分类</span>
-          {CATEGORIES.map(c => (
-            <span key={c} onClick={() => handleFilter('category', c)} className={pill(!c ? !category : category === c)}>
+          {TAG_CATEGORIES.map(c => (
+            <span key={c} onClick={() => handleTag(c)} className={pill(!c ? !tag : tag === c)}>
               {c || '全部'}
             </span>
           ))}
@@ -108,6 +101,12 @@ export default function DiscoverPage() {
 
       {/* 歌曲列表 */}
       {songs.length > 0 && <SongList songs={songs} />}
+      {!loading && songs.length === 0 && (
+        <div className="text-center py-16 text-gray-300">
+          <div className="text-4xl mb-3">🎵</div>
+          <div>暂无相关歌曲</div>
+        </div>
+      )}
 
       {/* 无限滚动触发器 */}
       <div ref={loaderRef} className="h-8 flex items-center justify-center">
