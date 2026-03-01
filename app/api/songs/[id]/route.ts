@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSongById, updateSong, incrementPlayCount } from '@/lib/github-db';
+import { getSongById, updateSong, incrementPlayCount, deleteSong } from '@/lib/github-db';
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const song = await getSongById(params.id);
@@ -23,6 +23,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
     const updated = await updateSong(params.id, body);
     return NextResponse.json(updated);
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const ok = await deleteSong(params.id);
+    if (!ok) return NextResponse.json({ error: '歌曲不存在' }, { status: 404 });
+    return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

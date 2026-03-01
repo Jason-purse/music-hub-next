@@ -174,6 +174,38 @@ export async function addSongToPlaylist(playlistId: string, songId: string): Pro
   return true;
 }
 
+export async function updatePlaylist(id: string, updates: Partial<Playlist>): Promise<Playlist | null> {
+  const db = await getDB();
+  const idx = db.playlists.findIndex(p => p.id === id);
+  if (idx === -1) return null;
+  if (updates.song_ids !== undefined) {
+    updates.song_count = updates.song_ids.length;
+  }
+  db.playlists[idx] = { ...db.playlists[idx], ...updates };
+  await saveDB(db, `chore: update playlist ${db.playlists[idx].name}`);
+  return db.playlists[idx];
+}
+
+export async function deletePlaylist(id: string): Promise<boolean> {
+  const db = await getDB();
+  const idx = db.playlists.findIndex(p => p.id === id);
+  if (idx === -1) return false;
+  const name = db.playlists[idx].name;
+  db.playlists.splice(idx, 1);
+  await saveDB(db, `feat: delete playlist ${name}`);
+  return true;
+}
+
+export async function deleteSong(id: string): Promise<boolean> {
+  const db = await getDB();
+  const idx = db.songs.findIndex(s => s.id === id);
+  if (idx === -1) return false;
+  const title = db.songs[idx].title;
+  db.songs.splice(idx, 1);
+  await saveDB(db, `feat: delete song ${title}`);
+  return true;
+}
+
 export function clearCache(): void { cache = null; }
 
 // ─── Pages ───────────────────────────────────────────────────────────────────
