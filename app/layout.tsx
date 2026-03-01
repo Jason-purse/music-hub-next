@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from '@/components/ThemeProvider';
+import { AppearanceProvider } from '@/components/AppearanceProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
             try {
-              var theme = localStorage.getItem('music-theme') || 'system';
+              var theme = localStorage.getItem('music-color-scheme') || 'system';
               var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
               if (theme === 'dark' || (theme === 'system' && prefersDark)) {
                 document.documentElement.classList.add('dark');
@@ -27,9 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         `}} />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
+        <AppearanceProvider>
           {children}
-        </ThemeProvider>
+        </AppearanceProvider>
       </body>
     </html>
   );

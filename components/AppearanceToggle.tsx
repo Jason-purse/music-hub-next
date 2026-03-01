@@ -1,12 +1,12 @@
 'use client'
-import { useTheme } from './ThemeProvider'
+import { useAppearance } from './AppearanceProvider'
 
-export function ThemeToggle() {
-  const { resolved, setTheme } = useTheme()
+export function AppearanceToggle() {
+  const { resolved, setColorScheme } = useAppearance()
 
   const toggle = () => {
-    if (resolved === 'light') setTheme('dark')
-    else setTheme('light')
+    if (resolved === 'light') setColorScheme('dark')
+    else setColorScheme('light')
   }
 
   return (

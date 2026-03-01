@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { usePlayerStore } from '@/stores/player';
 import { useEffect, useState } from 'react';
-import { ThemeToggle } from './ThemeToggle';
+import { AppearanceToggle } from './AppearanceToggle';
 
 const NAV_LINKS = [
   { href: '/',          label: '首页' },
@@ -92,7 +92,7 @@ export default function Navbar() {
 
       {/* 主题切换按钮 */}
       <div className="hidden md:flex ml-2">
-        <ThemeToggle />
+        <AppearanceToggle />
       </div>
 
       {/* 移动端汉堡按钮 */}
@@ -132,7 +132,7 @@ export default function Navbar() {
           })}
           <div className="flex items-center px-3 py-2">
             <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">主题</span>
-            <ThemeToggle />
+            <AppearanceToggle />
           </div>
         </div>
       )}
