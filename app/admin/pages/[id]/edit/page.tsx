@@ -591,6 +591,9 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
 
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRender = useRef(true)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const previewContainerRef = useRef<HTMLDivElement>(null)
+  const [previewFit, setPreviewFit] = useState<'responsive' | 'scale'>('responsive')
 
   useEffect(() => {
     Promise.all([
@@ -610,7 +613,42 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
     }).catch(() => setLoading(false))
   }, [params.id])
 
-  // ── 草稿自动保存（防抖 300ms）→ 存完后刷新预览 iframe（真实服务端渲染）───
+  // ── ResizeObserver：面板 resize 时通知 iframe 内部 window 重排 ────────────
+  // 原理：react-resizable-panels 用 CSS flex 改变面板尺寸，部分浏览器不会自动
+  //       把 DOM 尺寸变化传入 iframe 内部 window.resize 事件，需手动 dispatch。
+  // 不用 plugin，不用重载 iframe —— 原生 ResizeObserver 足矣。
+  useEffect(() => {
+    const container = previewContainerRef.current
+    if (!container) return
+    let rafId: number
+    const ro = new ResizeObserver(() => {
+      // rAF 避免在同一帧内多次触发
+      cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        try {
+          iframeRef.current?.contentWindow?.dispatchEvent(new Event('resize'))
+        } catch { /* cross-origin or not yet loaded */ }
+        // scale 模式：动态计算 iframe transform
+        if (previewFit === 'scale' && iframeRef.current) {
+          const cw = container.clientWidth
+          const iw = 1200 // 假设页面设计宽度 1200px
+          const scale = Math.min(1, cw / iw)
+          iframeRef.current.style.transform = `scale(${scale})`
+          iframeRef.current.style.transformOrigin = 'top left'
+          iframeRef.current.style.width = `${iw}px`
+          iframeRef.current.style.height = `${container.clientHeight / scale}px`
+        } else if (iframeRef.current) {
+          iframeRef.current.style.transform = ''
+          iframeRef.current.style.width = '100%'
+          iframeRef.current.style.height = '100%'
+        }
+      })
+    })
+    ro.observe(container)
+    return () => { ro.disconnect(); cancelAnimationFrame(rafId) }
+  }, [previewFit])
+
+  // ── 草稿自动保存（防抖 300ms）→ 存完后刷新预览 iframe（真实��务端渲染）───
   function scheduleDraftSave(currentPage: PageData) {
     if (draftTimerRef.current) clearTimeout(draftTimerRef.current)
     draftTimerRef.current = setTimeout(async () => {
@@ -1020,15 +1058,33 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                     <div className="px-3 py-2 border-b border-gray-100 shrink-0 flex items-center gap-1.5">
                       <span className="text-xs">👁</span>
                       <span className="text-xs font-semibold text-gray-600">实时预览</span>
-                      {draftSaving && <span className="ml-auto text-xs text-amber-500">保存中…</span>}
-                      {!draftSaving && draftSaved && <span className="ml-auto text-xs text-green-500">已更新 ✓</span>}
+                      {draftSaving && <span className="text-xs text-amber-500">保存中…</span>}
+                      {!draftSaving && draftSaved && <span className="text-xs text-green-500">已更新 ✓</span>}
+                      {/* 预览模式切换 */}
+                      <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                        <button
+                          onClick={() => setPreviewFit('responsive')}
+                          title="响应式：iframe 以面板实际宽度渲染，模拟窄屏效果"
+                          className={`px-2 py-0.5 rounded-md text-xs transition ${previewFit === 'responsive' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        >响应式</button>
+                        <button
+                          onClick={() => setPreviewFit('scale')}
+                          title="缩放适配：以 1200px 全宽渲染后等比缩小，所见即桌面效果"
+                          className={`px-2 py-0.5 rounded-md text-xs transition ${previewFit === 'scale' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                        >缩放</button>
+                      </div>
                     </div>
-                    <iframe
-                      key={previewKey}
-                      src={`/pages/${page.slug}?preview=1`}
-                      className="w-full flex-1 border-0 bg-white"
-                      title="实时预览"
-                    />
+                    {/* 容器 ref 供 ResizeObserver 监听；overflow-hidden 防止 scale 模式溢出 */}
+                    <div ref={previewContainerRef} className="flex-1 overflow-hidden relative bg-gray-50">
+                      <iframe
+                        ref={iframeRef}
+                        key={previewKey}
+                        src={`/pages/${page.slug}?preview=1`}
+                        className="border-0 bg-white"
+                        style={{ width: '100%', height: '100%' }}
+                        title="实时预览"
+                      />
+                    </div>
                   </div>
                 </Panel>
 
