@@ -167,3 +167,33 @@ body {
   background: linear-gradient(90deg, #e8e0cc 25%, #ddd5be 50%, #e8e0cc 75%);
   background-size: 800px 100%;
 }
+
+/* ── 护眼模式全局覆盖（Tailwind 硬编码类不走 CSS 变量，需手动覆盖）── */
+html.eye-care body {
+  background-color: #f5f0e6;
+  color: #3a2e1e;
+}
+html.eye-care .bg-white           { background-color: #ede8d8 !important; }
+html.eye-care .bg-gray-50         { background-color: #e8e2d2 !important; }
+html.eye-care .bg-gray-100        { background-color: #e0d8c8 !important; }
+html.eye-care .bg-gray-200        { background-color: #d8d0bc !important; }
+html.eye-care .hover\:bg-gray-50:hover  { background-color: #e8e2d2 !important; }
+html.eye-care .hover\:bg-gray-100:hover { background-color: #e0d8c8 !important; }
+html.eye-care .text-gray-900,
+html.eye-care .text-gray-800      { color: #3a2e1e !important; }
+html.eye-care .text-gray-700,
+html.eye-care .text-gray-600      { color: #6a5a42 !important; }
+html.eye-care .text-gray-500,
+html.eye-care .text-gray-400      { color: #9a8868 !important; }
+html.eye-care .text-indigo-600,
+html.eye-care .text-indigo-500    { color: #b8732a !important; }
+html.eye-care .border-gray-100,
+html.eye-care .border-gray-200    { border-color: #d5c9b0 !important; }
+html.eye-care .border-gray-300    { border-color: #c0b098 !important; }
+html.eye-care .divide-gray-100 > * + * { border-color: #d5c9b0 !important; }
+html.eye-care input[type="text"],
+html.eye-care input[type="search"] {
+  background-color: #ede8d8 !important;
+  color: #3a2e1e !important;
+  border-color: #d5c9b0 !important;
+}
