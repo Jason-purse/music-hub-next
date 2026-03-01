@@ -118,6 +118,16 @@ export default function AdminPage() {
               <div className="text-2xl font-bold text-indigo-500 group-hover:text-indigo-600">🗄️</div>
               <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">数据源中心</div>
             </a>
+            {/* 歌曲管理入口 */}
+            <a href="/admin/songs" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition cursor-pointer group">
+              <div className="text-2xl font-bold text-indigo-500 group-hover:text-indigo-600">🎵</div>
+              <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">歌曲管理</div>
+            </a>
+            {/* 歌单管理入口 */}
+            <a href="/admin/playlists" className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-indigo-200 transition cursor-pointer group">
+              <div className="text-2xl font-bold text-indigo-500 group-hover:text-indigo-600">📋</div>
+              <div className="text-sm text-gray-500 mt-1 group-hover:text-gray-600">歌单管理</div>
+            </a>
           </div>
         )}
 
