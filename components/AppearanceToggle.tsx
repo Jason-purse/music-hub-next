@@ -1,21 +1,32 @@
 'use client'
 import { useAppearance } from './AppearanceProvider'
+import type { ColorScheme } from './AppearanceProvider'
+
+const ICONS: Record<ColorScheme, string> = {
+  light: '☀️',
+  dark: '🌙',
+  system: '💻',
+}
+const LABELS: Record<ColorScheme, string> = {
+  light: '浅色',
+  dark: '深色',
+  system: '跟随系统',
+}
+const NEXT: Record<ColorScheme, ColorScheme> = {
+  light: 'dark',
+  dark: 'system',
+  system: 'light',
+}
 
 export function AppearanceToggle() {
-  const { resolved, setColorScheme } = useAppearance()
-
-  const toggle = () => {
-    if (resolved === 'light') setColorScheme('dark')
-    else setColorScheme('light')
-  }
-
+  const { colorScheme, setColorScheme } = useAppearance()
   return (
     <button
-      onClick={toggle}
-      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-      title={resolved === 'dark' ? '切换浅色' : '切换深色'}
+      onClick={() => setColorScheme(NEXT[colorScheme])}
+      className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-sm"
+      title={`当前：${LABELS[colorScheme]}，点击切换`}
     >
-      {resolved === 'dark' ? '☀️' : '🌙'}
+      {ICONS[colorScheme]}
     </button>
   )
 }

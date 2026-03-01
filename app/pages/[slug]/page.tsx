@@ -35,7 +35,7 @@ export default async function MusicPage({
   const Layout = LAYOUTS[renderLayout as keyof typeof LAYOUTS] || LAYOUTS['single-col']
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#1a1a1a] flex flex-col">
       {/* 预览模式角标：右上角小徽章，不遮挡内容 */}
       {isPreview && (
         <div className="fixed top-3 right-3 z-50 flex items-center gap-1.5 bg-amber-400 text-amber-900 text-xs font-medium px-2.5 py-1 rounded-full shadow-md select-none pointer-events-none">
@@ -49,11 +49,11 @@ export default async function MusicPage({
           <h1 className="sr-only">{page.title}</h1>
           <Layout slots={renderSlots} gutter={gutter} padding={padding} />
         </main>
-        <footer className="text-center text-xs text-gray-400 py-3 border-t border-gray-100 bg-white pb-20 md:pb-3">
+        <footer className="text-center text-xs text-gray-400 dark:text-gray-500 py-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] pb-20 md:pb-3">
           © 2025 MusicHub · 仅供个人欣赏 ·{' '}
-          <Link href="/disclaimer" className="hover:text-gray-600 underline">免责声明</Link>
+          <Link href="/disclaimer" className="hover:text-gray-600 dark:hover:text-gray-300 underline">免责声明</Link>
           {' · '}
-          <Link href="/admin" className="hover:text-gray-600 underline">管理后台</Link>
+          <Link href="/admin" className="hover:text-gray-600 dark:hover:text-gray-300 underline">管理后台</Link>
         </footer>
         <Player />
       </div>

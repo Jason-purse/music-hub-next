@@ -27,7 +27,7 @@ function SpacerComponent({ props }: { props: SpacerProps }) {
           left: 0,
           right: 0,
           height: '1px',
-          background: 'linear-gradient(90deg, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent)',
+          background: 'linear-gradient(90deg, transparent, var(--music-border) 20%, var(--music-border) 80%, transparent)',
         }} />
       )}
     </div>

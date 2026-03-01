@@ -13,10 +13,10 @@ export default async function DisclaimerPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">免责声明</h1>
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm">{d.text}</p>
+      <div className="bg-white dark:bg-[#1e1e1e] rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-none p-6">
+        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed text-sm">{d.text}</p>
         {d.contactEmail && (
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
             版权投诉邮箱：<a href={`mailto:${d.contactEmail}`} className="text-indigo-500 hover:underline">{d.contactEmail}</a>
           </p>
         )}

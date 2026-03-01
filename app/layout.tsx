@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { cookies } from 'next/headers';
 import './globals.css';
 import { AppearanceProvider } from '@/components/AppearanceProvider';
 
@@ -10,22 +11,14 @@ export const metadata: Metadata = {
   description: '发现经典华语音乐，重温80-90年代的美好旋律',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const scheme = cookieStore.get('music-color-scheme')?.value ?? 'system';
+  // system 时不加 class，让 CSS media query 兜底；dark 时加 dark class
+  const htmlClass = scheme === 'dark' ? 'dark' : '';
+
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            try {
-              var theme = localStorage.getItem('music-color-scheme') || 'system';
-              var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-              if (theme === 'dark' || (theme === 'system' && prefersDark)) {
-                document.documentElement.classList.add('dark');
-              }
-            } catch(e) {}
-          })();
-        `}} />
-      </head>
+    <html lang="zh-CN" className={htmlClass} suppressHydrationWarning>
       <body className={inter.className}>
         <AppearanceProvider>
           {children}

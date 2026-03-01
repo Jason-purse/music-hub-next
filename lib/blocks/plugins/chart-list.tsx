@@ -28,7 +28,7 @@ async function ChartListComponent({ props }: { props: ChartListProps }) {
 
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>}
+      {title && <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>}
       <SongList songs={songs} showRank={true} />
     </div>
   )

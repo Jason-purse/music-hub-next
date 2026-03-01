@@ -41,7 +41,7 @@ export function Timeline({ slots, gutter = 24, padding = 32 }: LayoutProps) {
                 style={{ gap: `${gutter * 0.75}px` }}
               >
                 {/* 节点圆圈 */}
-                <div className="shrink-0 w-10 h-10 rounded-full bg-white border-2 border-indigo-300 shadow-sm z-10
+                <div className="shrink-0 w-10 h-10 rounded-full bg-white dark:bg-[#1e1e1e] border-2 border-indigo-300 dark:border-indigo-700 shadow-sm z-10
                     flex items-center justify-center text-xs font-bold text-indigo-500">
                   {i + 1}
                 </div>
@@ -54,7 +54,7 @@ export function Timeline({ slots, gutter = 24, padding = 32 }: LayoutProps) {
             ))}
 
             {blocks.length === 0 && (
-              <p className="text-center text-gray-400 py-12">请在编辑器中向时间轴添加组件</p>
+              <p className="text-center text-gray-400 dark:text-gray-600 py-12">请在编辑器中向时间轴添加组件</p>
             )}
           </div>
         </div>
