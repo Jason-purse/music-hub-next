@@ -3,6 +3,7 @@ import React from 'react'
 import { SlotRenderer } from '../SlotRenderer'
 import { LayoutProps } from './index'
 import { TimelineNav } from './TimelineNav'
+import { responsiveGap, containerStyle } from './utils'
 import type { Block } from '../types'
 
 // 从 block.props 提取可读标题，fallback 到序号
@@ -25,17 +26,23 @@ export function Timeline({ slots, gutter = 24, padding = 32 }: LayoutProps) {
   const tocItems = blocks.map((b, i) => ({ id: b.id, label: blockTitle(b, i) }))
 
   return (
-    <div style={{ padding: `${padding}px 1rem` }}>
+    <div style={containerStyle(padding)}>
       <div className="max-w-5xl mx-auto flex gap-8 lg:gap-12 items-start">
 
         {/* ── 时间轴主体（Server 渲染，支持 async block）── */}
         <div className="flex-1 min-w-0 relative">
           {/* 竖线 */}
           {blocks.length > 1 && (
-            <div className="absolute left-5 top-6 bottom-6 w-0.5 bg-gradient-to-b from-indigo-300 via-purple-300 to-pink-300 pointer-events-none" />
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: '19px', top: '40px', bottom: '40px', width: '2px',
+                background: 'linear-gradient(to bottom, #a5b4fc, #d8b4fe, #f9a8d4)',
+              }}
+            />
           )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: `${gutter}px` }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: responsiveGap(gutter) }}>
             {blocks.map((block, i) => (
               // id="tl-{block.id}" 供客户端 TOC scroll + IntersectionObserver 使用
               <div
