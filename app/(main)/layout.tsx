@@ -1,6 +1,7 @@
 import Navbar from '@/components/Navbar';
 import Player from '@/components/Player';
 import DisclaimerModal from '@/components/DisclaimerModal';
+import { BackToTop } from '@/components/BackToTop';
 import Link from 'next/link';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       </footer>
       <Player />
       <DisclaimerModal />
+      <BackToTop />
     </div>
   );
 }
