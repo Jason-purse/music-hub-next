@@ -90,12 +90,11 @@ export default function AdminPagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin" className="text-sm text-gray-400 hover:text-gray-600">← 管理后台</Link>
-          <span className="text-gray-200">/</span>
-          <h1 className="font-bold text-lg">📄 页面管理</h1>
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-bold text-xl text-gray-800">🎨 自定义页面</h1>
+          <p className="text-sm text-gray-400 mt-0.5">通过拖拽积木块自由组合页面布局</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -105,7 +104,15 @@ export default function AdminPagesPage() {
         </button>
       </div>
 
-      <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+        <span className="text-2xl">🎨</span>
+        <div>
+          <div className="font-medium text-indigo-800">自定义页面</div>
+          <div className="text-sm text-indigo-600">通过拖拽积木块自由组合页面布局，访问路径为 /pages/[slug]</div>
+        </div>
+      </div>
+
+      <div className="space-y-4">
         {message && (
           <div className="text-sm px-4 py-2 bg-white rounded-lg border border-gray-100 shadow-sm">
             {message}
@@ -237,3 +244,4 @@ export default function AdminPagesPage() {
     </div>
   )
 }
+

@@ -60,10 +60,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setLogging(true)
     setLoginErr('')
     try {
-      const r = await fetch('/api/auth/login', {
+      const r = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ action: 'login', password }),
       })
       const d = await r.json()
       if (d.token) {

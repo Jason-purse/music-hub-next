@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useAdminToken } from '../context';
 
 interface Song {
   id: string;
@@ -19,14 +20,6 @@ interface Playlist {
 
 interface PlaylistDetail extends Playlist {
   songs: Song[];
-}
-
-function useAdminToken() {
-  const [token, setToken] = useState<string | null>(null);
-  useEffect(() => {
-    setToken(localStorage.getItem('admin_token') || '');
-  }, []);
-  return token;
 }
 
 function authHeaders(token: string) {
@@ -70,7 +63,7 @@ export default function PlaylistsAdminPage() {
   }, [token]);
 
   useEffect(() => {
-    if (token !== null) loadPlaylists();
+    if (token) loadPlaylists();
   }, [token, loadPlaylists]);
 
   async function createPlaylist() {
@@ -172,25 +165,18 @@ export default function PlaylistsAdminPage() {
     }
   }
 
-  if (token === null) return null;
-
   if (!token) return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center space-y-3">
-        <p className="text-gray-600">请先从管理后台登录</p>
-        <a href="/admin" className="text-indigo-500 hover:underline text-sm">→ 前往登录</a>
-      </div>
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-gray-400">请先登录</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 顶部导航 */}
-      <div className="bg-white border-b px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <a href="/admin" className="text-sm text-gray-400 hover:text-gray-600">← 返回后台</a>
-          <span className="text-gray-300">|</span>
-          <h1 className="font-bold text-lg">🎵 歌单管理</h1>
+    <div className="p-6">
+      {/* 顶部 */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-bold text-xl text-gray-800">📋 歌单管理</h1>
         </div>
         <button
           onClick={() => setShowModal(true)}
@@ -200,7 +186,7 @@ export default function PlaylistsAdminPage() {
         </button>
       </div>
 
-      <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <div className="space-y-4">
         {error && <p className="text-red-500 text-sm">{error}</p>}
         {loading ? (
           <div className="text-center py-12 text-gray-400">加载中…</div>
