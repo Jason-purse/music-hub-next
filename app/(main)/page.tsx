@@ -17,7 +17,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       {/* 欢迎横幅 */}
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 md:p-8 text-white">
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 dark:from-indigo-700 dark:to-purple-900 rounded-2xl p-6 md:p-8 text-white">
         <h1 className="text-2xl md:text-3xl font-bold mb-2">欢迎来到 MusicHub</h1>
         <p className="text-white/80 text-sm md:text-base">发现经典华语音乐，重温80-90年代的美好旋律</p>
         <div className="flex gap-3 mt-4">
@@ -34,9 +34,9 @@ export default async function HomePage() {
           { label: '80年代经典', value: total80s },
           { label: '90年代经典', value: total90s },
         ].map(item => (
-          <div key={item.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-indigo-600">{item.value}</div>
-            <div className="text-sm text-gray-500 mt-1">{item.label}</div>
+          <div key={item.label} className="bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm dark:shadow-none border border-gray-100 dark:border-gray-800">
+            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{item.value}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">{item.label}</div>
           </div>
         ))}
       </div>
@@ -44,8 +44,8 @@ export default async function HomePage() {
       {/* 最新上架 */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">最新上架</h2>
-          <Link href="/discover" className="text-indigo-500 text-sm hover:underline">查看更多</Link>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">最新上架</h2>
+          <Link href="/discover" className="text-indigo-500 dark:text-indigo-400 text-sm hover:underline">查看更多</Link>
         </div>
         <SongList songs={latest} />
       </section>
@@ -53,8 +53,8 @@ export default async function HomePage() {
       {/* 热门歌曲 */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">热门歌曲</h2>
-          <Link href="/rankings" className="text-indigo-500 text-sm hover:underline">查看更多</Link>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">热门歌曲</h2>
+          <Link href="/rankings" className="text-indigo-500 dark:text-indigo-400 text-sm hover:underline">查看更多</Link>
         </div>
         <SongList songs={hot} />
       </section>
@@ -63,8 +63,8 @@ export default async function HomePage() {
       {playlists.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold">推荐歌单</h2>
-            <Link href="/playlists" className="text-indigo-500 text-sm hover:underline">查看更多</Link>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">推荐歌单</h2>
+            <Link href="/playlists" className="text-indigo-500 dark:text-indigo-400 text-sm hover:underline">查看更多</Link>
           </div>
           <PlaylistGrid playlists={playlists.slice(0, 4)} />
         </section>

@@ -31,7 +31,7 @@ export function SearchBarComponent({ props }: { props: SearchBarProps }) {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleSearch(query)}
           placeholder={placeholder}
-          className="flex-1 border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300 shadow-sm bg-white"
+          className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-indigo-700 shadow-sm dark:shadow-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600"
         />
         <button
           onClick={() => handleSearch(query)}
@@ -46,7 +46,7 @@ export function SearchBarComponent({ props }: { props: SearchBarProps }) {
             <button
               key={tag}
               onClick={() => handleSearch(tag)}
-              className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs hover:bg-indigo-100 transition"
+              className="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-full text-xs hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition"
             >
               {tag}
             </button>

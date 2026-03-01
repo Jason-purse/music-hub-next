@@ -30,16 +30,16 @@ async function PlaylistGridComponent({ props }: { props: PlaylistGridProps }) {
 
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>}
+      {title && <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>}
       {playlists.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">暂无歌单</div>
+        <div className="text-center py-8 text-gray-400 dark:text-gray-600">暂无歌单</div>
       ) : (
         <div className={`grid ${gridClass} gap-4`}>
           {playlists.map(pl => (
             <Link
               key={pl.id}
               href={`/playlist/${pl.id}`}
-              className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition group"
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-none overflow-hidden hover:shadow-md dark:hover:border-gray-700 transition group"
             >
               <div className="aspect-square bg-gradient-to-br from-indigo-400 to-purple-500 relative">
                 {pl.cover_url && (
@@ -50,8 +50,8 @@ async function PlaylistGridComponent({ props }: { props: PlaylistGridProps }) {
                 </div>
               </div>
               <div className="p-3">
-                <div className="font-medium text-sm truncate">{pl.name}</div>
-                <div className="text-xs text-gray-400 mt-0.5">
+                <div className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">{pl.name}</div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {pl.song_count ?? pl.song_ids?.length ?? 0} 首歌曲
                 </div>
               </div>

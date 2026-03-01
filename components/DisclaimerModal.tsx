@@ -16,16 +16,16 @@ export default function DisclaimerModal() {
 
   if (!show) return null;
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
-        <h2 className="text-lg font-bold mb-3">免责声明</h2>
-        <p className="text-sm text-gray-600 whitespace-pre-wrap leading-relaxed">{text}</p>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 dark:bg-black/60 px-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-gray-100 dark:border-gray-800">
+        <h2 className="text-lg font-bold mb-3 text-gray-900 dark:text-gray-100">免责声明</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{text}</p>
         <div className="flex gap-3 mt-5">
           <button onClick={accept}
             className="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white py-2 rounded-lg text-sm font-medium transition">
             我已了解，继续使用
           </button>
-          <a href="/disclaimer" className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition flex items-center">
+          <a href="/disclaimer" className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition flex items-center">
             查看详情
           </a>
         </div>

@@ -69,20 +69,22 @@ export default function DiscoverPage() {
 
   const pill = (active: boolean) =>
     `px-3 py-1 rounded-full text-sm border transition cursor-pointer select-none ${
-      active ? 'bg-indigo-500 text-white border-indigo-500' : 'border-gray-200 hover:border-indigo-300 text-gray-600'
+      active
+        ? 'bg-indigo-500 text-white border-indigo-500'
+        : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 text-gray-600 dark:text-gray-400 dark:bg-gray-900'
     }`;
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">发现音乐</h1>
-        <span className="text-sm text-gray-400">共 {total} 首</span>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">发现音乐</h1>
+        <span className="text-sm text-gray-400 dark:text-gray-500">共 {total} 首</span>
       </div>
 
       {/* 筛选 */}
       <div className="space-y-2">
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-gray-400 w-8">年代</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 w-8">年代</span>
           {DECADES.map(d => (
             <span key={d} onClick={() => handleDecade(d)} className={pill(!d ? !decade : decade === d)}>
               {d || '全部'}
@@ -90,7 +92,7 @@ export default function DiscoverPage() {
           ))}
         </div>
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-gray-400 w-8">分类</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500 w-8">分类</span>
           {TAG_CATEGORIES.map(c => (
             <span key={c} onClick={() => handleTag(c)} className={pill(!c ? !tag : tag === c)}>
               {c || '全部'}
@@ -102,7 +104,7 @@ export default function DiscoverPage() {
       {/* 歌曲列表 */}
       {songs.length > 0 && <SongList songs={songs} />}
       {!loading && songs.length === 0 && (
-        <div className="text-center py-16 text-gray-300">
+        <div className="text-center py-16 text-gray-300 dark:text-gray-600">
           <div className="text-4xl mb-3">🎵</div>
           <div>暂无相关歌曲</div>
         </div>
@@ -110,9 +112,9 @@ export default function DiscoverPage() {
 
       {/* 无限滚动触发器 */}
       <div ref={loaderRef} className="h-8 flex items-center justify-center">
-        {loading && <span className="text-sm text-gray-400 animate-pulse">加载中...</span>}
+        {loading && <span className="text-sm text-gray-400 dark:text-gray-500 animate-pulse">加载中...</span>}
         {!loading && !hasMore && songs.length > 0 && (
-          <span className="text-sm text-gray-300">— 已加载全部 {total} 首 —</span>
+          <span className="text-sm text-gray-300 dark:text-gray-600">— 已加载全部 {total} 首 —</span>
         )}
       </div>
     </div>

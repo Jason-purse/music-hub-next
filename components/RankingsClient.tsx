@@ -99,8 +99,8 @@ function ChartSection({
       {/* Sentinel — 触发 sticky 检测 */}
       <div ref={sentinelRef} style={{ height: 1, marginBottom: -1 }} />
 
-      {/* Sticky Header — 始终白底，粘住后加 shadow + 字号缩小 */}
-      <div className={`sticky top-16 z-20 transition-all duration-200 bg-white/90 backdrop-blur-md -mx-1 px-1 ${isStuck ? 'shadow-sm' : ''}`}>
+      {/* Sticky Header */}
+      <div className={`sticky top-16 z-20 transition-all duration-200 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md -mx-1 px-1 ${isStuck ? 'shadow-sm dark:shadow-none dark:border-b dark:border-gray-800' : ''}`}>
 
         <div className={`flex items-center gap-3 transition-all duration-200 ${isStuck ? 'py-2' : 'py-3'}`}>
           {/* 榜单标题 */}
@@ -112,7 +112,7 @@ function ChartSection({
 
           {/* 当前范围 */}
           {isStuck && (
-            <span className="text-xs text-gray-400 tabular-nums">
+            <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
               正在看 #{Math.max(1, visibleEnd - 4)}–#{visibleEnd}
             </span>
           )}
@@ -121,7 +121,7 @@ function ChartSection({
 
           {/* 还有X首 */}
           {isStuck && remaining > 0 && (
-            <span className="text-xs text-gray-400">还有 {remaining} 首</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">还有 {remaining} 首</span>
           )}
           {isStuck && remaining === 0 && (
             <span className="text-xs" style={{ color }}>✓ 看完了</span>
@@ -144,7 +144,7 @@ function ChartSection({
 
         {/* section进度条（极细线，贴在 header 底部） */}
         {isStuck && (
-          <div className="h-[2px] bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-[2px] bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
             <div className="h-full rounded-full transition-all duration-300"
               style={{ width: `${pct}%`, background: color }} />
           </div>
@@ -161,7 +161,7 @@ function ChartSection({
         <AnimatePresence>
           {completed && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="text-center py-3 text-xs text-gray-300 flex items-center justify-center gap-2">
+              className="text-center py-3 text-xs text-gray-300 dark:text-gray-600 flex items-center justify-center gap-2">
               <span>— {label}到底了 · 这些旋律，你一定都听过 —</span>
             </motion.div>
           )}
@@ -220,19 +220,19 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
         {/* 页面标题 + 移动端横滑Tab */}
         <div className="space-y-4">
           <div className="flex items-baseline gap-3">
-            <h1 className="text-2xl font-bold text-gray-800">排行榜</h1>
-            <span className="text-xs text-gray-400">数据实时更新 · 榜单可在管理端配置</span>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">排行榜</h1>
+            <span className="text-xs text-gray-400 dark:text-gray-500">数据实时更新 · 榜单可在管理端配置</span>
           </div>
 
           {/* 移动端 Tab — 下滑时收起 */}
           <div className={`md:hidden sticky top-16 z-30 -mx-4 px-4 transition-transform duration-300
-            bg-white/90 backdrop-blur-md border-b border-gray-100
+            bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800
             ${scrollDir === 'down' ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
             <div className="flex overflow-x-auto gap-1 py-2 scrollbar-hide">
               {visibleSections.map(s => (
                 <button key={s.id} onClick={() => scrollTo(s.id)}
                   className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-all
-                    ${activeId === s.id ? 'text-white shadow-sm' : 'text-gray-500 bg-gray-100'}`}
+                    ${activeId === s.id ? 'text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'}`}
                   style={activeId === s.id ? { background: s.color } : {}}>
                   <span>{s.icon}</span>{s.label}
                 </button>
@@ -258,11 +258,11 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
         {/* 年代精选 */}
         {decadeEnabled && Object.keys(byDecade).length > 0 && (
           <section id="section-decades" className="scroll-mt-16 space-y-6">
-            <div className="sticky top-16 z-20 py-3 px-1 bg-white/90 backdrop-blur-md -mx-1 shadow-sm">
+            <div className="sticky top-16 z-20 py-3 px-1 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md -mx-1 shadow-sm dark:shadow-none dark:border-b dark:border-gray-800">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🎵</span>
-                <h2 className="text-xl font-bold text-indigo-600">年代精选</h2>
-                <span className="text-xs text-gray-400">各年代 TOP {decadeLimit}</span>
+                <h2 className="text-xl font-bold text-indigo-600 dark:text-indigo-400">年代精选</h2>
+                <span className="text-xs text-gray-400 dark:text-gray-500">各年代 TOP {decadeLimit}</span>
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -272,10 +272,10 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
                   <div key={decade}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-base">🎵</span>
-                      <h3 className="text-base font-bold text-indigo-600">
+                      <h3 className="text-base font-bold text-indigo-600 dark:text-indigo-400">
                         {LABELS[decade] ?? decade}
                       </h3>
-                      <span className="text-xs text-gray-400 font-normal">TOP {decadeLimit}</span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">TOP {decadeLimit}</span>
                     </div>
                     <SongList songs={songs as any[]} showRank />
                   </div>
@@ -297,7 +297,7 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
       <aside className="hidden lg:block w-10 shrink-0">
         <div className="sticky top-1/3 flex flex-col items-center gap-1">
           {/* 竖线 */}
-          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-gray-200" />
+          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-gray-200 dark:bg-gray-700" />
 
           {visibleSections.map((s, i) => {
             const active = activeId === s.id;
@@ -307,12 +307,12 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
                 title={s.label}>
                 {/* 节点圆点 */}
                 <div className={`w-2.5 h-2.5 rounded-full border-2 transition-all duration-300
-                  ${active ? 'scale-150 border-transparent' : 'border-gray-300 bg-white group-hover:border-gray-400'}`}
+                  ${active ? 'scale-150 border-transparent' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-950 group-hover:border-gray-400 dark:group-hover:border-gray-500'}`}
                   style={active ? { background: s.color, boxShadow: `0 0 8px ${s.color}60` } : {}} />
 
                 {/* hover 时展开文字标签 */}
                 <div className="absolute left-5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all
-                  pointer-events-none bg-white shadow-lg rounded-lg px-2.5 py-1.5 text-xs font-medium border border-gray-100"
+                  pointer-events-none bg-white dark:bg-gray-900 shadow-lg rounded-lg px-2.5 py-1.5 text-xs font-medium border border-gray-100 dark:border-gray-800"
                   style={{ color: active ? s.color : '#6b7280' }}>
                   {s.icon} {s.label}
                 </div>

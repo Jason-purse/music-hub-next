@@ -7,7 +7,7 @@ export default async function PlaylistsPage() {
   const playlists = await getPlaylists();
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">歌单</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">歌单</h1>
       <PlaylistGrid playlists={playlists} />
     </div>
   );

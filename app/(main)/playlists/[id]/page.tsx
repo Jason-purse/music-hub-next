@@ -31,23 +31,23 @@ export default async function PlaylistDetailPage({ params }: Props) {
           <span className="text-5xl">🎵</span>
         </div>
         <div className="flex-1 min-w-0 pb-2">
-          <div className="text-xs text-gray-400 mb-1">歌单</div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{playlist.name}</h1>
+          <div className="text-xs text-gray-400 dark:text-gray-500 mb-1">歌单</div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">{playlist.name}</h1>
           {playlist.description && (
-            <p className="text-gray-500 text-sm mb-3 line-clamp-2">{playlist.description}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-3 line-clamp-2">{playlist.description}</p>
           )}
-          <div className="text-sm text-gray-400">{songs.length} 首歌曲</div>
+          <div className="text-sm text-gray-400 dark:text-gray-500">{songs.length} 首歌曲</div>
         </div>
       </div>
 
       {/* 歌曲列表 */}
       {songs.length > 0 ? (
         <div>
-          <h2 className="text-lg font-semibold mb-3">歌曲列表</h2>
+          <h2 className="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">歌曲列表</h2>
           <SongList songs={songs} />
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-300">
+        <div className="text-center py-16 text-gray-300 dark:text-gray-600">
           <div className="text-4xl mb-3">🎼</div>
           <div>暂无歌曲</div>
           <Link href="/playlists" className="text-indigo-400 text-sm mt-2 inline-block hover:underline">← 返回歌单列表</Link>

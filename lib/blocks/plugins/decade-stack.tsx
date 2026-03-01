@@ -41,21 +41,21 @@ async function DecadeStackComponent({ props }: { props: DecadeStackProps }) {
 
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-800 mb-6">{title}</h3>}
+      {title && <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">{title}</h3>}
       <div className="space-y-4">
         {validData.map(({ decade, songs }, idx) => (
           <div
             key={decade}
-            className="relative bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+            className="relative bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-none overflow-hidden"
             style={{
               top: `${idx * 8}px`,
               zIndex: idx,
               minHeight: cardHeight ? `${cardHeight}px` : undefined,
             }}
           >
-            <div className="px-5 pt-5 pb-3 border-b border-gray-50 flex items-center gap-2">
+            <div className="px-5 pt-5 pb-3 border-b border-gray-50 dark:border-gray-800 flex items-center gap-2">
               <span className="text-xl">{decadeLabelMap[decade] || decade}</span>
-              <span className="ml-auto text-xs text-gray-400">{songs.length} 首</span>
+              <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">{songs.length} 首</span>
             </div>
             <div className="px-2 pb-2">
               <SongList songs={songs} showRank={true} />
@@ -63,7 +63,7 @@ async function DecadeStackComponent({ props }: { props: DecadeStackProps }) {
           </div>
         ))}
         {validData.length === 0 && (
-          <div className="text-center py-12 text-gray-300">暂无年代数据</div>
+          <div className="text-center py-12 text-gray-300 dark:text-gray-600">暂无年代数据</div>
         )}
       </div>
     </div>

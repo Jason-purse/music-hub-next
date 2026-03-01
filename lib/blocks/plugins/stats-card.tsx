@@ -32,24 +32,24 @@ async function StatsCardComponent({ props }: { props: StatsCardProps }) {
   }
 
   const items = [
-    showSongs && { label: '歌曲总数', value: songCount, icon: '🎵', color: 'text-indigo-600' },
-    showPlaylists && { label: '歌单数量', value: playlistCount, icon: '🎶', color: 'text-purple-600' },
-    showDecades && { label: '年代跨度', value: `${decadeCount} 个年代`, icon: '⏰', color: 'text-pink-600' },
+    showSongs && { label: '歌曲总数', value: songCount, icon: '🎵', color: 'text-indigo-600 dark:text-indigo-400' },
+    showPlaylists && { label: '歌单数量', value: playlistCount, icon: '🎶', color: 'text-purple-600 dark:text-purple-400' },
+    showDecades && { label: '年代跨度', value: `${decadeCount} 个年代`, icon: '⏰', color: 'text-pink-600 dark:text-pink-400' },
   ].filter(Boolean) as { label: string; value: any; icon: string; color: string }[]
 
   return (
     <div className="w-full">
-      {title && <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>}
+      {title && <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(items.length, 3)}, 1fr)`, gap: '1rem' }}>
         {items.map(item => (
-          <div key={item.label} className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col gap-2">
+          <div key={item.label} className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-100 dark:border-gray-800 shadow-sm dark:shadow-none flex flex-col gap-2">
             <div className="text-2xl">{item.icon}</div>
             <div className={`text-3xl font-bold ${item.color}`}>{item.value}</div>
-            <div className="text-sm text-gray-500">{item.label}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{item.label}</div>
           </div>
         ))}
         {items.length === 0 && (
-          <div className="text-center py-8 text-gray-400 col-span-3">未选择任何统计项</div>
+          <div className="text-center py-8 text-gray-400 dark:text-gray-600 col-span-3">未选择任何统计项</div>
         )}
       </div>
     </div>
