@@ -104,7 +104,7 @@ export default function SongList({ songs, showRank = false }: Props) {
             </div>
 
             {/* 右侧操作 */}
-            <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-1 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>
               {song.decade && (
                 <span className="hidden sm:inline px-1.5 py-0.5 bg-gray-100 rounded-md text-gray-400 text-xs">{song.decade}</span>
               )}
