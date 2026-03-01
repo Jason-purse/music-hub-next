@@ -13,6 +13,8 @@ import React from 'react'
 
 export interface LayoutProps {
   slots: Record<string, Block[]>
+  gutter?: number   // px，默认 24
+  padding?: number  // px，默认 32
 }
 
 export const LAYOUTS: Record<LayoutType, React.ComponentType<LayoutProps>> = {

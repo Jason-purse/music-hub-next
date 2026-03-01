@@ -1,16 +1,12 @@
 import React from 'react'
 import { SlotRenderer } from '../SlotRenderer'
-import { Block } from '../types'
+import { LayoutProps } from './index'
 
-interface Props {
-  slots: Record<string, Block[]>
-}
-
-export function HeroFull({ slots }: Props) {
+export function HeroFull({ slots, gutter = 24, padding = 32 }: LayoutProps) {
   return (
     <div className="w-full">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <SlotRenderer blocks={slots.hero || []} />
+      <div className="max-w-6xl mx-auto" style={{ padding: `${padding}px 1rem` }}>
+        <SlotRenderer blocks={slots.hero || []} gutter={gutter} />
       </div>
     </div>
   )

@@ -11,18 +11,25 @@ export type LayoutType =
   | 'timeline'
   | 'spotlight'
 
+export interface LayoutConfig {
+  gutter?: number      // 插槽之间的间距，单位 px，默认 24
+  padding?: number     // 布局容器内边距，单位 px，默认 32
+}
+
 export interface PageDescriptor {
   id: string
   slug: string        // URL: /pages/[slug]
   title: string
   layout: LayoutType
   slots: Record<string, Block[]>  // { main: [...], sidebar: [...] }
+  layoutConfig?: LayoutConfig     // 布局级配置（间距、内边距等）
   published: boolean
   createdAt: number
   updatedAt: number
   draft?: {
     layout: LayoutType
     slots: Record<string, Block[]>
+    layoutConfig?: LayoutConfig
   }
 }
 

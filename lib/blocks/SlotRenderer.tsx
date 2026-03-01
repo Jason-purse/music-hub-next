@@ -2,9 +2,14 @@ import React from 'react'
 import { blockRegistry } from './registry'
 import { Block } from './types'
 
-export function SlotRenderer({ blocks }: { blocks: Block[] }) {
+interface Props {
+  blocks: Block[]
+  gutter?: number  // 块之间的间距 px，默认 24
+}
+
+export function SlotRenderer({ blocks, gutter = 24 }: Props) {
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: `${gutter}px` }}>
       {(blocks || []).map(block => {
         const plugin = blockRegistry.get(block.type)
         if (!plugin) {

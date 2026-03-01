@@ -28,6 +28,9 @@ export default async function MusicPage({
   // 预览模式：读 draft（如果有），否则 fallback 到已发布内容
   const renderLayout = isPreview && page.draft ? page.draft.layout : page.layout
   const renderSlots = isPreview && page.draft ? page.draft.slots : page.slots
+  const renderLayoutConfig = isPreview && page.draft ? (page.draft.layoutConfig ?? page.layoutConfig) : page.layoutConfig
+  const gutter = renderLayoutConfig?.gutter ?? 24
+  const padding = renderLayoutConfig?.padding ?? 32
 
   const Layout = LAYOUTS[renderLayout as keyof typeof LAYOUTS] || LAYOUTS['single-col']
 
@@ -44,7 +47,7 @@ export default async function MusicPage({
         <Navbar />
         <main className="flex-1 pt-20 pb-32">
           <h1 className="sr-only">{page.title}</h1>
-          <Layout slots={renderSlots} />
+          <Layout slots={renderSlots} gutter={gutter} padding={padding} />
         </main>
         <footer className="text-center text-xs text-gray-400 py-3 border-t border-gray-100 bg-white pb-20 md:pb-3">
           © 2025 MusicHub · 仅供个人欣赏 ·{' '}

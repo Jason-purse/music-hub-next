@@ -8,7 +8,7 @@ export async function POST(
 ) {
   try {
     const body = await req.json()
-    const { layout, slots } = body
+    const { layout, slots, layoutConfig } = body
 
     const pages = await getPages()
     const page = pages.find(p => p.id === params.id)
@@ -16,7 +16,8 @@ export async function POST(
 
     const updated = {
       ...page,
-      draft: { layout, slots },
+      draft: { layout, slots, layoutConfig },
+      layoutConfig: layoutConfig ?? page.layoutConfig, // 同步到正式配置（下次发布时生效）
       updatedAt: new Date().toISOString() as any,
     }
     await savePage(updated)

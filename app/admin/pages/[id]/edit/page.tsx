@@ -512,7 +512,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
         await fetch(`/api/pages/${currentPage.id}/draft`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ layout: currentPage.layout, slots: currentPage.slots }),
+          body: JSON.stringify({ layout: currentPage.layout, slots: currentPage.slots, layoutConfig: currentPage.layoutConfig }),
         })
         setDraftSaved(true)
         setTimeout(() => setDraftSaved(false), 2000)
@@ -844,6 +844,36 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">当前骨架</label>
                               <div className="text-sm text-gray-700 font-medium">{allLayoutOptions.find(l => l.value === page.layout)?.label || page.layout}</div>
+                            </div>
+                            {/* Gutter 间距控制 */}
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                插槽间距 <span className="text-indigo-500 font-semibold">{page.layoutConfig?.gutter ?? 24}px</span>
+                              </label>
+                              <input
+                                type="range" min={0} max={80} step={4}
+                                value={page.layoutConfig?.gutter ?? 24}
+                                onChange={e => setPage(p => p ? { ...p, layoutConfig: { ...(p.layoutConfig || {}), gutter: Number(e.target.value) } } : p)}
+                                className="w-full accent-indigo-500"
+                              />
+                              <div className="flex justify-between text-xs text-gray-300 mt-0.5">
+                                <span>无</span><span>紧凑</span><span>默认</span><span>宽松</span>
+                              </div>
+                            </div>
+                            {/* Padding 内边距控制 */}
+                            <div>
+                              <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                容器内边距 <span className="text-indigo-500 font-semibold">{page.layoutConfig?.padding ?? 32}px</span>
+                              </label>
+                              <input
+                                type="range" min={0} max={96} step={8}
+                                value={page.layoutConfig?.padding ?? 32}
+                                onChange={e => setPage(p => p ? { ...p, layoutConfig: { ...(p.layoutConfig || {}), padding: Number(e.target.value) } } : p)}
+                                className="w-full accent-indigo-500"
+                              />
+                              <div className="flex justify-between text-xs text-gray-300 mt-0.5">
+                                <span>无</span><span>小</span><span>中</span><span>大</span>
+                              </div>
                             </div>
                             <div>
                               <label className="text-xs font-medium text-gray-500 block mb-1.5">发布状态</label>

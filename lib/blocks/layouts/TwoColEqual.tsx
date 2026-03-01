@@ -1,21 +1,13 @@
 import React from 'react'
 import { SlotRenderer } from '../SlotRenderer'
-import { Block } from '../types'
+import { LayoutProps } from './index'
 
-interface Props {
-  slots: Record<string, Block[]>
-}
-
-export function TwoColEqual({ slots }: Props) {
+export function TwoColEqual({ slots, gutter = 24, padding = 32 }: LayoutProps) {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <div className="grid grid-cols-2 gap-6">
-        <div>
-          <SlotRenderer blocks={slots.left || []} />
-        </div>
-        <div>
-          <SlotRenderer blocks={slots.right || []} />
-        </div>
+    <div className="max-w-5xl mx-auto" style={{ padding: `${padding}px 1rem` }}>
+      <div className="grid grid-cols-2" style={{ gap: `${gutter}px` }}>
+        <div><SlotRenderer blocks={slots.left || []} gutter={gutter} /></div>
+        <div><SlotRenderer blocks={slots.right || []} gutter={gutter} /></div>
       </div>
     </div>
   )

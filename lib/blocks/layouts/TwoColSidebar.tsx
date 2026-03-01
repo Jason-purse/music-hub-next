@@ -1,20 +1,16 @@
 import React from 'react'
 import { SlotRenderer } from '../SlotRenderer'
-import { Block } from '../types'
+import { LayoutProps } from './index'
 
-interface Props {
-  slots: Record<string, Block[]>
-}
-
-export function TwoColSidebar({ slots }: Props) {
+export function TwoColSidebar({ slots, gutter = 24, padding = 32 }: LayoutProps) {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <div className="flex gap-6">
-        <div className="flex-1 min-w-0" style={{ flex: '2' }}>
-          <SlotRenderer blocks={slots.main || []} />
+    <div className="max-w-6xl mx-auto" style={{ padding: `${padding}px 1rem` }}>
+      <div className="flex" style={{ gap: `${gutter}px` }}>
+        <div style={{ flex: 2, minWidth: 0 }}>
+          <SlotRenderer blocks={slots.main || []} gutter={gutter} />
         </div>
-        <div className="shrink-0" style={{ flex: '1', minWidth: 0 }}>
-          <SlotRenderer blocks={slots.sidebar || []} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <SlotRenderer blocks={slots.sidebar || []} gutter={gutter} />
         </div>
       </div>
     </div>
