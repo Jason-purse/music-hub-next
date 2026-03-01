@@ -99,11 +99,10 @@ function ChartSection({
       {/* Sentinel — 触发 sticky 检测 */}
       <div ref={sentinelRef} style={{ height: 1, marginBottom: -1 }} />
 
-      {/* Sticky Header */}
-      <div className={`sticky top-16 z-20 transition-all duration-200 ${isStuck ? 'shadow-md' : ''}`}
-        style={{ background: isStuck ? 'rgba(255,255,255,0.88)' : 'transparent', backdropFilter: isStuck ? 'blur(16px)' : 'none' }}>
+      {/* Sticky Header — 始终白底，粘住后加 shadow + 字号缩小 */}
+      <div className={`sticky top-16 z-20 transition-all duration-200 bg-white/90 backdrop-blur-md -mx-1 px-1 ${isStuck ? 'shadow-sm' : ''}`}>
 
-        <div className={`flex items-center gap-3 px-1 transition-all duration-200 ${isStuck ? 'py-2' : 'py-3'}`}>
+        <div className={`flex items-center gap-3 transition-all duration-200 ${isStuck ? 'py-2' : 'py-3'}`}>
           {/* 榜单标题 */}
           <span className="text-lg">{icon}</span>
           <h2 className={`font-bold transition-all duration-200 ${isStuck ? 'text-base' : 'text-xl'}`}
@@ -259,7 +258,7 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
         {/* 年代精选 */}
         {decadeEnabled && Object.keys(byDecade).length > 0 && (
           <section id="section-decades" className="scroll-mt-16 space-y-6">
-            <div className="sticky top-16 z-20 py-3 px-1 bg-white/80 backdrop-blur-md -mx-1">
+            <div className="sticky top-16 z-20 py-3 px-1 bg-white/90 backdrop-blur-md -mx-1 shadow-sm">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🎵</span>
                 <h2 className="text-xl font-bold text-indigo-600">年代精选</h2>
@@ -271,10 +270,13 @@ export default function RankingsClient({ hot, liked, newest, byDecade, decadeLim
                 const LABELS: Record<string, string> = { '80s': '80年代', '90s': '90年代', '00s': '2000年代', '10s': '2010年代', '20s': '2020年代' };
                 return (
                   <div key={decade}>
-                    <h3 className="text-base font-semibold text-indigo-500 mb-3">
-                      🎵 {LABELS[decade] ?? decade}
-                      <span className="text-xs text-gray-400 font-normal ml-2">TOP {decadeLimit}</span>
-                    </h3>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-base">🎵</span>
+                      <h3 className="text-base font-bold text-indigo-600">
+                        {LABELS[decade] ?? decade}
+                      </h3>
+                      <span className="text-xs text-gray-400 font-normal">TOP {decadeLimit}</span>
+                    </div>
                     <SongList songs={songs as any[]} showRank />
                   </div>
                 );
