@@ -6,10 +6,12 @@ import Link from 'next/link';
 export const revalidate = 60; // ISR: 每60秒重新生成
 
 export default async function HomePage() {
-  const [{ songs: latest, total }, { songs: hot }, playlists] = await Promise.all([
+  const [{ songs: latest, total }, { songs: hot }, playlists, { total: total80s }, { total: total90s }] = await Promise.all([
     getSongs({ limit: 10, sort: 'created_at' }),
     getSongs({ limit: 10, sort: 'play_count' }),
     getPlaylists(),
+    getSongs({ limit: 1, decade: '80s' }),   // 只要 total，不需要数据
+    getSongs({ limit: 1, decade: '90s' }),
   ]);
 
   return (
@@ -29,8 +31,8 @@ export default async function HomePage() {
         {[
           { label: '全部歌曲', value: total },
           { label: '歌单数量', value: playlists.length },
-          { label: '80年代经典', value: latest.filter(s => s.decade === '80s').length },
-          { label: '90年代经典', value: latest.filter(s => s.decade === '90s').length },
+          { label: '80年代经典', value: total80s },
+          { label: '90年代经典', value: total90s },
         ].map(item => (
           <div key={item.label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <div className="text-2xl font-bold text-indigo-600">{item.value}</div>

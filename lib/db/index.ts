@@ -76,9 +76,14 @@ async function saveDB(data: DBData, message = 'chore: update'): Promise<void> {
 
 // Songs
 
-export async function getSongs(opts: { limit?: number; offset?: number; sort?: string } = {}) {
+export async function getSongs(opts: { limit?: number; offset?: number; sort?: string; decade?: string; tag?: string } = {}) {
   const db = await getDB();
-  const songs = [...db.songs];
+  let songs = [...db.songs];
+  if (opts.decade) songs = songs.filter(s => s.decade === opts.decade);
+  if (opts.tag)    songs = songs.filter(s => {
+    const tags = Array.isArray(s.tags) ? s.tags : String(s.tags || '').split(',').map(t => t.trim());
+    return tags.some(t => t.toLowerCase() === opts.tag!.toLowerCase());
+  });
   if (opts.sort === 'play_count')  songs.sort((a, b) => b.play_count - a.play_count);
   else if (opts.sort === 'like_count') songs.sort((a, b) => b.like_count - a.like_count);
   else songs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

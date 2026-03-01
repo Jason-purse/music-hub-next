@@ -8,7 +8,7 @@ export default function PlaylistGrid({ playlists }: { playlists: Playlist[] }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {playlists.map(pl => (
-        <Link key={pl.id} href={`/playlist/${pl.id}`}
+        <Link key={pl.id} href={`/playlists/${pl.id}`}
           className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition group">
           <div className="aspect-square bg-gradient-to-br from-indigo-400 to-purple-500 relative">
             {pl.cover_url && <Image src={pl.cover_url} alt={pl.name} fill className="object-cover" unoptimized />}
