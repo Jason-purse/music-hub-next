@@ -155,7 +155,7 @@ export async function getPlaylistById(id: string): Promise<(Playlist & { songs: 
   const db = await getDB();
   const pl = db.playlists.find(p => p.id === id);
   if (!pl) return null;
-  const songs = pl.song_ids.map(sid => db.songs.find(s => s.id === sid)).filter(Boolean) as Song[];
+  const songs = (pl.song_ids ?? []).map(sid => db.songs.find(s => s.id === sid)).filter(Boolean) as Song[];
   return { ...pl, songs };
 }
 
@@ -171,8 +171,8 @@ export async function addSongToPlaylist(playlistId: string, songId: string): Pro
   const db = await getDB();
   const pl = db.playlists.find(p => p.id === playlistId);
   if (!pl) return false;
-  if (!pl.song_ids.includes(songId)) {
-    pl.song_ids.push(songId);
+  if (!(pl.song_ids ?? []).includes(songId)) {
+    pl.song_ids = [...(pl.song_ids ?? []), songId];
     await saveDB(db, `Add song to playlist: ${pl.name}`);
   }
   return true;

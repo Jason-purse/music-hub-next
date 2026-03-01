@@ -70,13 +70,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const range = req.headers.get('range') || '';
     const { buffer } = result;
+    // 转为 ArrayBuffer（Edge Runtime 兼容）
+    const ab: ArrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) as ArrayBuffer;
 
     if (range) {
       const [startStr, endStr] = range.replace('bytes=', '').split('-');
       const start = parseInt(startStr);
       const end = endStr ? parseInt(endStr) : buffer.length - 1;
-      const sliced = new Uint8Array(buffer.buffer, buffer.byteOffset + start, end - start + 1);
-      return new NextResponse(sliced, {
+      return new Response(ab.slice(start, end + 1), {
         status: 206,
         headers: {
           'Content-Type': 'audio/mpeg',
@@ -88,7 +89,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       });
     }
 
-    return new NextResponse(new Uint8Array(buffer), {
+    return new Response(ab, {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
