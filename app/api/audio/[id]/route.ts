@@ -75,7 +75,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       const [startStr, endStr] = range.replace('bytes=', '').split('-');
       const start = parseInt(startStr);
       const end = endStr ? parseInt(endStr) : buffer.length - 1;
-      return new NextResponse(buffer.slice(start, end + 1), {
+      const sliced = new Uint8Array(buffer.buffer, buffer.byteOffset + start, end - start + 1);
+      return new NextResponse(sliced, {
         status: 206,
         headers: {
           'Content-Type': 'audio/mpeg',
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       });
     }
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         'Content-Type': 'audio/mpeg',
