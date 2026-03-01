@@ -10,19 +10,17 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json();
-    const { action } = body;
-
-    if (action === 'play') {
+    if (body.action === 'play') {
       await incrementPlayCount(params.id);
       return NextResponse.json({ ok: true });
     }
-    if (action === 'like') {
+    if (body.action === 'like') {
       const song = await getSongById(params.id);
-      if (!song) return NextResponse.json({ error: '歌曲不存在' }, { status: 404 });
-      await updateSong(params.id, { like_count: song.like_count + 1 });
-      return NextResponse.json({ ok: true, liked: true });
+      if (!song) return NextResponse.json({ error: '不存在' }, { status: 404 });
+      const newCount = (song.like_count || 0) + 1;
+      await updateSong(params.id, { like_count: newCount });
+      return NextResponse.json({ ok: true, liked: true, like_count: newCount });
     }
-
     const updated = await updateSong(params.id, body);
     return NextResponse.json(updated);
   } catch (e: any) {

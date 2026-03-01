@@ -1,0 +1,12 @@
+{
+  "name": "music-hub-local-api",
+  "version": "1.0.0",
+  "description": "Local mock server for GitHub Contents API — MusicHub dev",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

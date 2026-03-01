@@ -1,6 +1,6 @@
 'use client';
-import { create } from 'zustand';
 import { Song } from '@/lib/github-db';
+import { create } from 'zustand';
 
 interface PlayerState {
   currentSong: Song | null;
@@ -9,91 +9,111 @@ interface PlayerState {
   currentTime: number;
   duration: number;
   volume: number;
-  audio: HTMLAudioElement | null;
+
   play: (song: Song, queue?: Song[]) => Promise<void>;
   togglePlay: () => void;
   prev: () => void;
   next: () => void;
-  seek: (pct: number) => void;
+  seek: (time: number) => void;   // 秒数，不是百分比
   setVolume: (v: number) => void;
-  setCurrentTime: (t: number) => void;
-  setDuration: (d: number) => void;
-  setIsPlaying: (v: boolean) => void;
 }
 
-export const usePlayerStore = create<PlayerState>((set, get) => ({
-  currentSong: null,
-  queue: [],
-  isPlaying: false,
-  currentTime: 0,
-  duration: 0,
-  volume: 0.8,
-  audio: null,
+// ── 单例 Audio（只在浏览器中存在）────────────────────────────────────────────
+let _audio: HTMLAudioElement | null = null;
 
-  play: async (song, queue = []) => {
-    const state = get();
-    let audio = state.audio;
+function getAudio(): HTMLAudioElement | null {
+  if (typeof window === 'undefined') return null;
+  if (!_audio) {
+    _audio = new Audio();
+    _audio.preload = 'auto';
+  }
+  return _audio;
+}
 
-    if (!audio && typeof window !== 'undefined') {
-      audio = new Audio();
-      audio.volume = state.volume;
-      audio.addEventListener('timeupdate', () => set({ currentTime: audio!.currentTime }));
-      audio.addEventListener('loadedmetadata', () => set({ duration: audio!.duration }));
-      audio.addEventListener('ended', () => get().next());
-      audio.addEventListener('play', () => set({ isPlaying: true }));
-      audio.addEventListener('pause', () => set({ isPlaying: false }));
-    }
+export const usePlayerStore = create<PlayerState>((set, get) => {
+  // 初始化 audio 事件（只绑定一次）
+  if (typeof window !== 'undefined') {
+    const audio = getAudio()!;
+    audio.addEventListener('timeupdate',      () => set({ currentTime: audio.currentTime }));
+    audio.addEventListener('loadedmetadata',  () => set({ duration: audio.duration }));
+    audio.addEventListener('play',            () => set({ isPlaying: true }));
+    audio.addEventListener('pause',           () => set({ isPlaying: false }));
+    audio.addEventListener('ended',           () => get().next());
+    audio.volume = 0.8;
+  }
 
-    if (!audio) return;
+  return {
+    currentSong: null,
+    queue: [],
+    isPlaying: false,
+    currentTime: 0,
+    duration: 0,
+    volume: 0.8,
 
-    // 获取 token
-    let token = '';
-    try {
-      const r = await fetch(`/api/audio/token/${song.id}`);
-      const d = await r.json();
-      token = d.token || '';
-    } catch {}
+    play: async (song, queue = []) => {
+      const audio = getAudio();
+      if (!audio) return;
 
-    audio.src = `/api/audio/${song.id}${token ? `?token=${token}` : ''}`;
-    audio.load();
-    await audio.play();
+      // 获取 token
+      let token = '';
+      try {
+        const r = await fetch(`/api/audio/token/${song.id}`);
+        token = (await r.json()).token || '';
+      } catch {}
 
-    set({ currentSong: song, queue: queue.length ? queue : [song], audio, isPlaying: true });
+      const src = `/api/audio/${song.id}${token ? `?token=${token}` : ''}`;
 
-    // 增加播放计数
-    fetch(`/api/songs/${song.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'play' }) }).catch(() => {});
-  },
+      // 只有换歌时才重新 load，避免 seek 时重复播放
+      if (!audio.src.includes(`/api/audio/${song.id}`)) {
+        audio.src = src;
+        audio.load();
+      }
 
-  togglePlay: () => {
-    const { audio, isPlaying } = get();
-    if (!audio) return;
-    if (isPlaying) audio.pause(); else audio.play();
-  },
+      set({
+        currentSong: song,
+        queue: queue.length ? queue : [song],
+        currentTime: 0,
+        duration: 0,
+      });
 
-  prev: () => {
-    const { queue, currentSong, play } = get();
-    const idx = queue.findIndex(s => s.id === currentSong?.id);
-    if (idx > 0) play(queue[idx - 1], queue);
-  },
+      try { await audio.play(); } catch {}
 
-  next: () => {
-    const { queue, currentSong, play } = get();
-    const idx = queue.findIndex(s => s.id === currentSong?.id);
-    if (idx < queue.length - 1) play(queue[idx + 1], queue);
-  },
+      // 异步上报播放次数
+      fetch(`/api/songs/${song.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'play' }),
+      }).catch(() => {});
+    },
 
-  seek: (pct) => {
-    const { audio, duration } = get();
-    if (audio) audio.currentTime = (pct / 100) * duration;
-  },
+    togglePlay: () => {
+      const audio = getAudio();
+      if (!audio) return;
+      if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
+    },
 
-  setVolume: (v) => {
-    const { audio } = get();
-    if (audio) audio.volume = v;
-    set({ volume: v });
-  },
+    prev: () => {
+      const { queue, currentSong, play } = get();
+      const idx = queue.findIndex(s => s.id === currentSong?.id);
+      if (idx > 0) play(queue[idx - 1], queue);
+    },
 
-  setCurrentTime: (t) => set({ currentTime: t }),
-  setDuration: (d) => set({ duration: d }),
-  setIsPlaying: (v) => set({ isPlaying: v }),
-}));
+    next: () => {
+      const { queue, currentSong, play } = get();
+      const idx = queue.findIndex(s => s.id === currentSong?.id);
+      if (idx < queue.length - 1) play(queue[idx + 1], queue);
+    },
+
+    seek: (time: number) => {
+      const audio = getAudio();
+      if (audio) audio.currentTime = time;
+    },
+
+    setVolume: (v: number) => {
+      const audio = getAudio();
+      if (audio) audio.volume = v;
+      set({ volume: v });
+    },
+  };
+});

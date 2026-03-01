@@ -1,29 +1,19 @@
-import { getSongs } from '@/lib/github-db';
-import SongList from '@/components/SongList';
+import { getRankings } from '@/lib/db/index';
+import RankingsClient from '@/components/RankingsClient';
 
-export const revalidate = 300;
+export const revalidate = 120;
 
 export default async function RankingsPage() {
-  const [{ songs: hot }, { songs: fresh }] = await Promise.all([
-    getSongs({ limit: 20, sort: 'play_count' }),
-    getSongs({ limit: 20, sort: 'created_at' }),
-  ]);
+  const { hot, liked, newest, byDecade, config } = await getRankings();
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold">排行榜</h1>
-      <section>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span className="text-2xl">🔥</span> 热播榜
-        </h2>
-        <SongList songs={hot} />
-      </section>
-      <section>
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <span className="text-2xl">✨</span> 最新上架
-        </h2>
-        <SongList songs={fresh} />
-      </section>
-    </div>
+    <RankingsClient
+      hot={{   ...hot,   icon: '🔥', color: 'rgb(239,68,68)' }}
+      liked={{  ...liked,  icon: '❤️', color: 'rgb(236,72,153)' }}
+      newest={{ ...newest, icon: '✨', color: 'rgb(34,197,94)' }}
+      byDecade={byDecade as Record<string, any[]>}
+      decadeLimit={config.byDecade.limitPerDecade}
+      decadeEnabled={config.byDecade.enabled}
+    />
   );
 }

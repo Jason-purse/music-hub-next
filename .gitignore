@@ -6,3 +6,8 @@ node_modules/
 .DS_Store
 config/
 .vercel
+
+# 音频文件（存放于 music-hub-files repo）
+uploads/music/*.mp3
+uploads/music/*.mp3
+data/db.json

@@ -1,57 +1,131 @@
 'use client';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { usePlayerStore } from '@/stores/player';
+import { useEffect, useState } from 'react';
 
-const navItems = [
-  { href: '/', label: '首页', icon: '🏠' },
-  { href: '/discover', label: '发现', icon: '🎵' },
-  { href: '/rankings', label: '排行榜', icon: '📊' },
-  { href: '/playlists', label: '歌单', icon: '📋' },
+const NAV_LINKS = [
+  { href: '/',          label: '首页' },
+  { href: '/discover',  label: '发现' },
+  { href: '/rankings',  label: '排行榜' },
+  { href: '/playlists', label: '歌单' },
 ];
 
 export default function Navbar() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [q, setQ] = useState('');
+  const pathname     = usePathname();
+  const currentSong  = usePlayerStore(s => s.currentSong);
+  const isPlaying    = usePlayerStore(s => s.isPlaying);
+  const [scrolled, setScrolled] = useState(false);
+  const [q, setQ]   = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-gray-200">
-      <div className="flex items-center gap-3 px-4 h-14">
-        {/* Logo */}
-        <Link href="/" className="text-indigo-600 font-bold text-lg shrink-0">🎶 MusicHub</Link>
+    <nav className={`fixed top-0 left-0 right-0 z-40 h-14 flex items-center px-4 transition-all duration-300
+      ${scrolled
+        ? 'bg-white/95 backdrop-blur-2xl border-b border-gray-100 shadow-sm'
+        : 'bg-white/80 backdrop-blur-md md:bg-transparent'
+      }`}>
 
-        {/* 桌面导航 */}
-        <nav className="hidden md:flex items-center gap-1 ml-2">
-          {navItems.map(item => (
-            <Link key={item.href} href={item.href}
-              className={`px-3 py-1.5 rounded-lg text-sm transition ${pathname === item.href ? 'bg-indigo-50 text-indigo-600 font-medium' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {item.label}
+      {/* Logo */}
+      <Link href="/" className="flex items-center gap-2 shrink-0">
+        <span className="text-indigo-500 text-xl">♫</span>
+        <span className="font-bold text-gray-800 tracking-wide text-sm hidden sm:block">MusicHub</span>
+      </Link>
+
+      {/* 桌面导航 */}
+      <div className="hidden md:flex items-center gap-1 ml-4">
+        {NAV_LINKS.map(({ href, label }) => {
+          const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          return (
+            <Link key={href} href={href}
+              className={`px-3 py-1.5 rounded-lg text-sm transition-all
+                ${active
+                  ? 'text-indigo-600 font-medium bg-indigo-50'
+                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-100/70'
+                }`}>
+              {label}
             </Link>
-          ))}
-        </nav>
-
-        {/* 搜索框 */}
-        <form onSubmit={(e) => { e.preventDefault(); if (q.trim()) router.push(`/search?q=${encodeURIComponent(q.trim())}`); }}
-          className="flex-1 max-w-xs ml-auto">
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="搜索歌曲、歌手..."
-            className="w-full h-8 px-3 text-sm bg-gray-100 rounded-full border-0 outline-none focus:bg-white focus:ring-2 focus:ring-indigo-300 transition" />
-        </form>
+          );
+        })}
       </div>
 
-      {/* 移动端底部导航 */}
-      <nav className="md:hidden flex border-t border-gray-100">
-        {navItems.map(item => (
-          <Link key={item.href} href={item.href}
-            className={`flex-1 flex flex-col items-center py-2 text-xs transition ${pathname === item.href ? 'text-indigo-600' : 'text-gray-500'}`}>
-            <span className="text-lg">{item.icon}</span>
-            <span>{item.label}</span>
-          </Link>
-        ))}
-        <Link href="/search" className={`flex-1 flex flex-col items-center py-2 text-xs ${pathname === '/search' ? 'text-indigo-600' : 'text-gray-500'}`}>
-          <span className="text-lg">🔍</span><span>搜索</span>
-        </Link>
-      </nav>
-    </header>
+      {/* 当前播放提示（桌面） */}
+      {scrolled && currentSong && (
+        <div className="hidden lg:flex items-center gap-2 flex-1 justify-center min-w-0">
+          <div className="flex items-end gap-[2px] h-3">
+            {isPlaying ? (
+              <>
+                <span className="w-[3px] bg-indigo-400 rounded-full playing-bar playing-bar-1 h-3" />
+                <span className="w-[3px] bg-indigo-400 rounded-full playing-bar playing-bar-2 h-3" />
+                <span className="w-[3px] bg-indigo-400 rounded-full playing-bar playing-bar-3 h-3" />
+              </>
+            ) : (
+              <span className="text-indigo-400 text-xs">♪</span>
+            )}
+          </div>
+          <span className="text-xs text-gray-500 truncate max-w-[200px]">
+            {currentSong.title} · {currentSong.artist}
+          </span>
+        </div>
+      )}
+
+      {/* 搜索框（桌面） */}
+      <form className="hidden md:block ml-auto" onSubmit={e => { e.preventDefault(); if (q.trim()) window.location.href = `/search?q=${encodeURIComponent(q)}`; }}>
+        <input
+          value={q} onChange={e => setQ(e.target.value)}
+          placeholder="搜索歌曲、歌手..."
+          className="w-36 lg:w-48 h-8 px-3 text-xs bg-gray-100/80 hover:bg-gray-100 focus:bg-white rounded-full border border-transparent focus:border-indigo-200 outline-none transition-all focus:w-56"
+        />
+      </form>
+
+      {/* 移动端汉堡按钮 */}
+      <button
+        className="md:hidden ml-auto p-2 rounded-lg hover:bg-gray-100 transition"
+        onClick={() => setMenuOpen(v => !v)}
+        aria-label="菜单">
+        <div className="relative w-5 h-4 flex flex-col justify-between">
+          <span className={`w-full h-0.5 bg-gray-600 rounded-full transition-all origin-center ${menuOpen ? 'rotate-45 translate-y-1.5' : ''}`} />
+          <span className={`w-full h-0.5 bg-gray-600 rounded-full transition-all ${menuOpen ? 'opacity-0' : ''}`} />
+          <span className={`w-full h-0.5 bg-gray-600 rounded-full transition-all origin-center ${menuOpen ? '-rotate-45 -translate-y-1.5' : ''}`} />
+        </div>
+      </button>
+
+      {/* 移动端展开菜单 */}
+      {menuOpen && (
+        <div className="absolute top-14 left-0 right-0 md:hidden bg-white border-b border-gray-100 shadow-lg px-4 py-3 space-y-1">
+          <form className="mb-3" onSubmit={e => { e.preventDefault(); if (q.trim()) { window.location.href = `/search?q=${encodeURIComponent(q)}`; setMenuOpen(false); } }}>
+            <input
+              value={q} onChange={e => setQ(e.target.value)}
+              placeholder="搜索歌曲、歌手..."
+              className="w-full h-10 px-4 text-sm bg-gray-100 rounded-lg border border-transparent focus:border-indigo-200 outline-none"
+            />
+          </form>
+          {NAV_LINKS.map(({ href, label }) => {
+            const active = href === '/' ? pathname === '/' : pathname.startsWith(href);
+            return (
+              <Link key={href} href={href}
+                className={`block py-2.5 px-3 rounded-lg text-sm font-medium transition
+                  ${active
+                    ? 'text-indigo-600 bg-indigo-50'
+                    : 'text-gray-700 hover:bg-gray-100'
+                  }`}>
+                {label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </nav>
   );
 }
