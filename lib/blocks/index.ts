@@ -5,6 +5,7 @@ import { DecadeStackBlock } from './plugins/decade-stack'
 import { PlaylistGridBlock } from './plugins/playlist-grid'
 import { SearchBarBlock } from './plugins/search-bar'
 import { StatsCardBlock } from './plugins/stats-card'
+import { SpacerBlock } from './plugins/spacer'
 
 blockRegistry
   .register(HeroBannerBlock)
@@ -13,6 +14,7 @@ blockRegistry
   .register(PlaylistGridBlock)
   .register(SearchBarBlock)
   .register(StatsCardBlock)
+  .register(SpacerBlock)
 
 export { blockRegistry }
 export * from './types'

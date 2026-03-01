@@ -33,10 +33,21 @@ export interface PageDescriptor {
   }
 }
 
+export interface BlockStyle {
+  marginTop?: number       // 块上方留白 px
+  marginBottom?: number    // 块下方留白 px
+  paddingX?: number        // 块横向内边距 px
+  paddingY?: number        // 块纵向内边距 px
+  bgColor?: string         // 背景色（'transparent' | '#fff' | ...）
+  borderRadius?: number    // 圆角 px
+  shadow?: 'none' | 'sm' | 'md' | 'lg'
+}
+
 export interface Block {
   id: string
-  type: string        // 'hero-banner' | 'chart-list' | 'decade-stack' | 'playlist-grid' | 'search-bar' | 'stats-card'
+  type: string
   props: Record<string, any>
+  style?: BlockStyle        // 可选外壳样式，由 SlotRenderer 处理，插件不感知
 }
 
 export type FieldType = 'text' | 'number' | 'color' | 'switch' | 'select' | 'textarea'

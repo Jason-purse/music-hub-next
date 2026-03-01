@@ -177,15 +177,18 @@ function FieldInput({ field, value, onChange }: { field: FieldDef; value: any; o
 // ─── 右栏：配置面板 ─────────────────────────────────────────────────────────
 
 function ConfigPanel({
-  block, onUpdate, onDelete, onClose
+  block, onUpdate, onUpdateStyle, onDelete, onClose
 }: {
   block: Block
   onUpdate: (p: Record<string, any>) => void
+  onUpdateStyle: (s: Partial<import('@/lib/blocks/types').BlockStyle>) => void
   onDelete: () => void
   onClose: () => void
 }) {
+  const [styleOpen, setStyleOpen] = React.useState(false)
   const plugin = blockMetaRegistry.get(block.type)
   if (!plugin) return null
+  const s = block.style || {}
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
@@ -206,6 +209,106 @@ function ConfigPanel({
             />
           </div>
         ))}
+
+        {/* ── 外观样式折叠区 ────────��────────────────── */}
+        <div className="border-t border-gray-100 pt-3">
+          <button
+            onClick={() => setStyleOpen(o => !o)}
+            className="flex items-center justify-between w-full text-xs font-semibold text-gray-500 hover:text-gray-700 transition"
+          >
+            <span>🎨 外观样式</span>
+            <span className="text-gray-300">{styleOpen ? '▲' : '▼'}</span>
+          </button>
+
+          {styleOpen && (
+            <div className="mt-3 space-y-4">
+              {/* 上下外边距 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">上边距 <span className="text-indigo-500">{s.marginTop ?? 0}px</span></label>
+                  <input type="range" min={0} max={120} step={4}
+                    value={s.marginTop ?? 0}
+                    onChange={e => onUpdateStyle({ marginTop: Number(e.target.value) })}
+                    className="w-full accent-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">下边距 <span className="text-indigo-500">{s.marginBottom ?? 0}px</span></label>
+                  <input type="range" min={0} max={120} step={4}
+                    value={s.marginBottom ?? 0}
+                    onChange={e => onUpdateStyle({ marginBottom: Number(e.target.value) })}
+                    className="w-full accent-indigo-500" />
+                </div>
+              </div>
+
+              {/* 内边距 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">横向内边距 <span className="text-indigo-500">{s.paddingX ?? 0}px</span></label>
+                  <input type="range" min={0} max={64} step={4}
+                    value={s.paddingX ?? 0}
+                    onChange={e => onUpdateStyle({ paddingX: Number(e.target.value) })}
+                    className="w-full accent-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">纵向内边距 <span className="text-indigo-500">{s.paddingY ?? 0}px</span></label>
+                  <input type="range" min={0} max={64} step={4}
+                    value={s.paddingY ?? 0}
+                    onChange={e => onUpdateStyle({ paddingY: Number(e.target.value) })}
+                    className="w-full accent-indigo-500" />
+                </div>
+              </div>
+
+              {/* 背景色 */}
+              <div>
+                <label className="text-xs text-gray-400 block mb-1.5">背景色</label>
+                <div className="flex gap-2 flex-wrap">
+                  {['transparent','#ffffff','#f9fafb','#eff6ff','#fdf4ff','#f0fdf4','#fff7ed','#1f2937'].map(c => (
+                    <button key={c}
+                      onClick={() => onUpdateStyle({ bgColor: c })}
+                      title={c}
+                      className="w-7 h-7 rounded-lg border-2 transition"
+                      style={{
+                        background: c === 'transparent' ? 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0 0 / 12px 12px' : c,
+                        borderColor: s.bgColor === c ? '#6366f1' : '#e5e7eb',
+                      }}
+                    />
+                  ))}
+                  <input type="color" value={s.bgColor && s.bgColor !== 'transparent' ? s.bgColor : '#ffffff'}
+                    onChange={e => onUpdateStyle({ bgColor: e.target.value })}
+                    className="w-7 h-7 rounded-lg border border-gray-200 cursor-pointer p-0.5" title="自定义颜色" />
+                </div>
+              </div>
+
+              {/* 圆角 + 阴影 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">圆角 <span className="text-indigo-500">{s.borderRadius ?? 0}px</span></label>
+                  <input type="range" min={0} max={32} step={2}
+                    value={s.borderRadius ?? 0}
+                    onChange={e => onUpdateStyle({ borderRadius: Number(e.target.value) })}
+                    className="w-full accent-indigo-500" />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1.5">阴影</label>
+                  <div className="flex gap-1.5">
+                    {(['none','sm','md','lg'] as const).map(sh => (
+                      <button key={sh}
+                        onClick={() => onUpdateStyle({ shadow: sh })}
+                        className={`flex-1 py-1 text-xs rounded-lg border transition ${s.shadow === sh || (!s.shadow && sh === 'none') ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}
+                      >{sh === 'none' ? '无' : sh}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 重置 */}
+              <button
+                onClick={() => onUpdateStyle({ marginTop: 0, marginBottom: 0, paddingX: 0, paddingY: 0, bgColor: 'transparent', borderRadius: 0, shadow: 'none' })}
+                className="text-xs text-gray-400 hover:text-gray-600 underline"
+              >重置外观</button>
+            </div>
+          )}
+        </div>
       </div>
       <div className="px-4 pb-4 shrink-0">
         <button onClick={onDelete}
@@ -227,6 +330,10 @@ const BLOCK_CATEGORIES = [
   {
     label: '音乐类',
     types: ['chart-list', 'decade-stack', 'playlist-grid', 'stats-card'],
+  },
+  {
+    label: '布局',
+    types: ['spacer'],
   },
 ]
 
@@ -565,6 +672,20 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
     setPage({ ...page, slots: newSlots })
   }
 
+  function updateBlockStyle(style: Partial<import('@/lib/blocks/types').BlockStyle>) {
+    if (!page || !selectedId) return
+    const newSlots = { ...page.slots }
+    for (const [slot, blocks] of Object.entries(newSlots)) {
+      const idx = blocks.findIndex(b => b.id === selectedId)
+      if (idx >= 0) {
+        const newBlocks = [...blocks]
+        newBlocks[idx] = { ...newBlocks[idx], style: { ...newBlocks[idx].style, ...style } }
+        newSlots[slot] = newBlocks
+      }
+    }
+    setPage({ ...page, slots: newSlots })
+  }
+
   function deleteBlock(slotName: string, id: string) {
     if (!page) return
     const newBlocks = page.slots[slotName].filter(b => b.id !== id)
@@ -822,6 +943,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                         <ConfigPanel
                           block={selectedBlock}
                           onUpdate={props => updateBlockProps(props)}
+                          onUpdateStyle={style => updateBlockStyle(style)}
                           onDelete={() => { const slot = findSlotForBlock(selectedId!); if (slot && selectedId) deleteBlock(slot, selectedId) }}
                           onClose={() => setSelectedId(null)}
                         />
