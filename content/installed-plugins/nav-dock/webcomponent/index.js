@@ -27,7 +27,6 @@ class NavDockMain extends HTMLElement {
       this._position = saved;
     }
     this._render();
-    this._applyPosition();
     window.addEventListener('scroll', this._boundOnScroll, { passive: true });
     window.addEventListener('popstate', this._boundOnPopstate);
     window.addEventListener('resize', this._boundOnResize);
@@ -61,8 +60,20 @@ class NavDockMain extends HTMLElement {
     return p.startsWith(href);
   }
 
+  _getSavedPosition() {
+    const saved = localStorage.getItem('nav-dock-position');
+    return saved && ['bottom', 'left', 'right', 'top'].includes(saved) ? saved : 'bottom';
+  }
+
   _applyPosition() {
     const pos = this._position;
+    const dock = this.shadowRoot && this.shadowRoot.querySelector('.dock');
+    if (dock) {
+      dock.setAttribute('data-pos', pos);
+      // 根据吸附边设置 flex-direction
+      dock.style.flexDirection = (pos === 'left' || pos === 'right') ? 'column' : 'row';
+    }
+    // CSS variables for page spacing
     const html = document.documentElement;
     html.setAttribute('data-dock-position', pos);
     html.style.setProperty('--dock-bottom-space', pos === 'bottom' ? '72px' : '0px');
@@ -78,6 +89,7 @@ class NavDockMain extends HTMLElement {
     this._popoverOpen = false;
     this._applyPosition();
     this._render();
+    // _applyPosition is called inside _render() now
   }
 
   _toggleCollapse() {
@@ -92,11 +104,13 @@ class NavDockMain extends HTMLElement {
       this._applyPosition();
     }
     this._render();
+    // _applyPosition is called inside _render() now
   }
 
   _togglePopover() {
     this._popoverOpen = !this._popoverOpen;
     this._render();
+    // _applyPosition is called inside _render() now
   }
 
   _onScroll() {
@@ -118,19 +132,79 @@ class NavDockMain extends HTMLElement {
   _updateScrollVisibility() {
     const dock = this.shadowRoot.querySelector('.dock');
     if (!dock || this._collapsed) return;
-    const pos = this._position;
     if (this._scrollHidden) {
-      if (pos === 'bottom') dock.style.transform = 'translateY(100%)';
-      else if (pos === 'top') dock.style.transform = 'translateY(-100%)';
-      else if (pos === 'left') dock.style.transform = 'translateX(-100%)';
-      else if (pos === 'right') dock.style.transform = 'translateX(100%)';
+      dock.classList.add('scroll-hidden');
     } else {
-      dock.style.transform = 'translate(0, 0)';
+      dock.classList.remove('scroll-hidden');
     }
   }
 
+  _initDrag() {
+    const dock = this.shadowRoot.querySelector('.dock');
+    if (!dock || dock._dragInited) return;
+    dock._dragInited = true;
+
+    let dragging = false, startX, startY, startRect;
+
+    dock.addEventListener('pointerdown', e => {
+      if (e.target.closest('button,a,[data-no-drag]')) return;
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startRect = dock.getBoundingClientRect();
+      dock.setPointerCapture(e.pointerId);
+      dock.style.transition = 'none';
+      // 拖拽开始：把 dock 从 CSS 定位改成 absolute+inline style 跟随鼠标
+      dock.style.left = startRect.left + 'px';
+      dock.style.top = startRect.top + 'px';
+      dock.style.right = 'auto';
+      dock.style.bottom = 'auto';
+      dock.style.transform = 'none';
+      e.preventDefault();
+    });
+
+    dock.addEventListener('pointermove', e => {
+      if (!dragging) return;
+      dock.style.left = (startRect.left + e.clientX - startX) + 'px';
+      dock.style.top = (startRect.top + e.clientY - startY) + 'px';
+    });
+
+    dock.addEventListener('pointerup', e => {
+      if (!dragging) return;
+      dragging = false;
+      dock.style.transition = '';
+      this._snapToEdge(dock);
+    });
+  }
+
+  _snapToEdge(dock) {
+    const rect = dock.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    const dists = {
+      bottom: vh - cy,
+      top: cy,
+      left: cx,
+      right: vw - cx,
+    };
+    const nearest = Object.entries(dists).sort((a,b) => a[1]-b[1])[0][0];
+
+    // 清除 inline style，改回 data-pos 控制
+    dock.style.left = '';
+    dock.style.top = '';
+    dock.style.right = '';
+    dock.style.bottom = '';
+    dock.style.transform = '';
+
+    this._setPosition(nearest); // 保存并重新渲染
+  }
+
+
   _onPopstate() {
     this._render();
+    // _applyPosition is called inside _render() now
   }
 
   _onResize() {
@@ -194,16 +268,8 @@ class NavDockMain extends HTMLElement {
       case 'right': borderRadius = '16px 0 0 16px'; break;
     }
 
-    var dockPositionCSS;
-    switch (pos) {
-      case 'bottom': dockPositionCSS = 'bottom:0;left:50%;transform:translateX(-50%);'; break;
-      case 'top': dockPositionCSS = 'top:0;left:50%;transform:translateX(-50%);'; break;
-      case 'left': dockPositionCSS = 'left:0;top:50%;transform:translateY(-50%);'; break;
-      case 'right': dockPositionCSS = 'right:0;top:50%;transform:translateY(-50%);'; break;
-    }
-
-    var togglePositionCSS;
-    if (this._collapsed) {
+    
+    var togglePositionCSS; if (this._collapsed) {
       switch (pos) {
         case 'bottom': togglePositionCSS = 'bottom:8px;right:16px;'; break;
         case 'top': togglePositionCSS = 'top:8px;right:16px;'; break;
@@ -238,12 +304,11 @@ class NavDockMain extends HTMLElement {
     var style = document.createElement('style');
     style.textContent = [
       ':host { display:block; position:relative; z-index:9999; }',
+      /* 基础位置 - 由 data-pos attribute 控制 */
       '.dock {',
       '  position:fixed;',
-      '  ' + dockPositionCSS,
-      '  ' + dockSize,
+      '  z-index:99999;',
       '  display:' + (this._collapsed ? 'none' : 'flex') + ';',
-      '  flex-direction:' + flexDir + ';',
       '  align-items:center;',
       '  justify-content:center;',
       '  gap:4px;',
@@ -254,10 +319,19 @@ class NavDockMain extends HTMLElement {
       '  border:1px solid ' + borderColor + ';',
       '  border-radius:' + borderRadius + ';',
       '  box-shadow:0 8px 32px ' + shadowColor + ';',
-      '  transition:transform 0.2s ease;',
-      '  z-index:99999;',
+      '  transition:transform 0.25s ease, opacity 0.25s ease;',
       '  box-sizing:border-box;',
       '}',
+      /* 位置吸附 - 通过 data-pos attribute */
+      '.dock[data-pos="bottom"] { bottom:16px; left:50%; transform:translateX(-50%); }',
+      '.dock[data-pos="top"] { top:16px; left:50%; transform:translateX(-50%); }',
+      '.dock[data-pos="left"] { left:16px; top:50%; transform:translateY(-50%); }',
+      '.dock[data-pos="right"] { right:16px; top:50%; transform:translateY(-50%); }',
+      /* scroll 隐藏动画 - 叠加在基础 transform 上 */
+      '.dock[data-pos="bottom"].scroll-hidden { transform:translateX(-50%) translateY(110%); opacity:0; }',
+      '.dock[data-pos="top"].scroll-hidden { transform:translateX(-50%) translateY(-110%); opacity:0; }',
+      '.dock[data-pos="left"].scroll-hidden { transform:translateY(-50%) translateX(-110%); opacity:0; }',
+      '.dock[data-pos="right"].scroll-hidden { transform:translateY(-50%) translateX(110%); opacity:0; }',
       '.nav-item {',
       '  display:flex;',
       '  flex-direction:column;',
@@ -431,6 +505,7 @@ class NavDockMain extends HTMLElement {
         if (!settingsWrap.contains(e.target)) {
           this._popoverOpen = false;
           this._render();
+    // _applyPosition is called inside _render() now
           document.removeEventListener('click', closePopover);
         }
       };
@@ -444,10 +519,15 @@ class NavDockMain extends HTMLElement {
     dock.addEventListener('mouseleave', this._boundOnMouseLeave);
 
     this.shadowRoot.appendChild(dock);
+
+    // 初始化拖拽（只在首次渲染时）
+    this._initDrag();
+    // 应用位置（设置 data-pos attribute）
+    this._applyPosition();
   }
 }
 
-/* ============================================================
+/* =+
    CE 2: nav-dock-mini — 迷你积木，嵌入内容区
    ============================================================ */
 class NavDockMini extends HTMLElement {
@@ -459,10 +539,12 @@ class NavDockMini extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._boundOnPopstate = () => this._render();
+    // _applyPosition is called inside _render() now
   }
 
   connectedCallback() {
     this._render();
+    // _applyPosition is called inside _render() now
     window.addEventListener('popstate', this._boundOnPopstate);
   }
 
@@ -472,6 +554,7 @@ class NavDockMini extends HTMLElement {
 
   attributeChangedCallback() {
     this._render();
+    // _applyPosition is called inside _render() now
   }
 
   _navItems() {
@@ -566,10 +649,12 @@ class NavBreadcrumbWc extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._boundOnPopstate = () => this._render();
+    // _applyPosition is called inside _render() now
   }
 
   connectedCallback() {
     this._render();
+    // _applyPosition is called inside _render() now
     window.addEventListener('popstate', this._boundOnPopstate);
   }
 

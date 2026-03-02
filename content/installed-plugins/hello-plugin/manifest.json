@@ -5,7 +5,56 @@
   "description": "插件系统示例：验证 Slot 注入 + 后台管理页 + WC 渲染 + SDK 数据 API",
   "tier": "community",
   "script": "webcomponent/index.js",
-  "configUI": "hello-config",
+  "configSchema": [
+    {
+      "key": "displayTitle",
+      "type": "text",
+      "label": "显示标题",
+      "description": "在首页展示的插件标题",
+      "default": "Hello from Plugin!",
+      "placeholder": "输入标题文字"
+    },
+    {
+      "key": "accentColor",
+      "type": "color",
+      "label": "强调色",
+      "description": "插件 UI 主色调",
+      "default": "#6366f1"
+    },
+    {
+      "key": "maxItems",
+      "type": "number",
+      "label": "最大显示数量",
+      "default": 5,
+      "min": 1,
+      "max": 20,
+      "step": 1
+    },
+    {
+      "key": "layout",
+      "type": "select",
+      "label": "布局方式",
+      "default": "card",
+      "options": [
+        { "label": "卡片视图", "value": "card" },
+        { "label": "列表视图", "value": "list" },
+        { "label": "网格视图", "value": "grid" }
+      ]
+    },
+    {
+      "key": "showAuthor",
+      "type": "boolean",
+      "label": "显示作者信息",
+      "default": true
+    },
+    {
+      "key": "apiEndpoint",
+      "type": "url",
+      "label": "自定义 API 地址",
+      "description": "留空使用默认 API",
+      "placeholder": "https://api.example.com/v1"
+    }
+  ],
   "slots": [
     { "name": "main-footer", "component": "hello-banner" }
   ],

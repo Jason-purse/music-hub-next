@@ -1,10 +1,6 @@
-export interface PluginConfigField {
-  type: 'text' | 'select' | 'color' | 'toggle' | 'number'
-  label: string
-  default: unknown
-  options?: { value: string; label: string }[]
-  description?: string
-}
+import type { ConfigFieldSchema, PluginAdminMenuDecl } from '@/lib/plugin-system/types'
+
+export type { ConfigFieldSchema, ConfigFieldType } from '@/lib/plugin-system/types'
 
 export interface PluginManifest {
   id: string
@@ -17,10 +13,8 @@ export interface PluginManifest {
   defaultEnabled?: boolean
   uiSlots?: string[]
   description?: string
-  config?: {
-    schema: Record<string, PluginConfigField>
-  }
-  configUI?: string   // WC 标签名，若有则在 admin 插件配置页用它替代 schema 表单
+  configSchema?: ConfigFieldSchema[]    // Tier 1：manifest 声明的配置字段
+  adminMenu?: PluginAdminMenuDecl[]     // Tier 2：自定义管理页（含配置页）
   slots?: string[]
   apiPrefix?: string
   pagePrefix?: string

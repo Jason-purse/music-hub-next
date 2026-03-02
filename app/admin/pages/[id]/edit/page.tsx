@@ -28,6 +28,124 @@ interface PageData {
 
 function genId() { return `blk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}` }
 
+// ─── 布局块 children 初始化 ──────────────────────────────────────────────────
+
+function getDefaultChildren(type: string): Record<string, Block[]> | undefined {
+  const layouts: Record<string, Record<string, Block[]>> = {
+    'layout-container': { default: [] },
+    'layout-flex':      { default: [] },
+    'layout-grid':      { default: [] },
+    'layout-columns':   { col1: [], col2: [] },
+    'layout-stack':     { background: [], foreground: [] },
+    'layout-card':      { default: [] },
+  }
+  return layouts[type]
+}
+
+// ─── 递归查找 / 更新 block ──────────────────────────────────────────────────
+
+function findBlockInSlots(slots: Record<string, Block[]>, id: string): Block | null {
+  for (const blocks of Object.values(slots)) {
+    for (const block of blocks) {
+      if (block.id === id) return block
+      if (block.children) {
+        const found = findBlockInSlots(block.children, id)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+
+function removeBlockFromSlots(slots: Record<string, Block[]>, id: string): Record<string, Block[]> {
+  const result: Record<string, Block[]> = {}
+  for (const [key, blocks] of Object.entries(slots)) {
+    result[key] = blocks
+      .filter(b => b.id !== id)
+      .map(b => {
+        if (b.children) {
+          return { ...b, children: removeBlockFromSlots(b.children, id) }
+        }
+        return b
+      })
+  }
+  return result
+}
+
+function insertBlockIntoSlots(
+  slots: Record<string, Block[]>,
+  parentId: string,
+  slotName: string,
+  index: number,
+  newBlock: Block,
+): Record<string, Block[]> {
+  const result: Record<string, Block[]> = {}
+  for (const [key, blocks] of Object.entries(slots)) {
+    result[key] = blocks.map(b => {
+      if (b.id === parentId && b.children) {
+        const updatedChildren = { ...b.children }
+        const arr = [...(updatedChildren[slotName] || [])]
+        arr.splice(index, 0, newBlock)
+        updatedChildren[slotName] = arr
+        return { ...b, children: updatedChildren }
+      }
+      if (b.children) {
+        return { ...b, children: insertBlockIntoSlots(b.children, parentId, slotName, index, newBlock) }
+      }
+      return b
+    })
+  }
+  return result
+}
+
+function updateBlockInSlots(
+  slots: Record<string, Block[]>,
+  id: string,
+  updater: (b: Block) => Block,
+): Record<string, Block[]> {
+  const result: Record<string, Block[]> = {}
+  for (const [key, blocks] of Object.entries(slots)) {
+    result[key] = blocks.map(b => {
+      if (b.id === id) return updater(b)
+      if (b.children) {
+        return { ...b, children: updateBlockInSlots(b.children, id, updater) }
+      }
+      return b
+    })
+  }
+  return result
+}
+
+function findSlotContainingBlock(slots: Record<string, Block[]>, blockId: string): { parentId: string | null; slotName: string; index: number } | null {
+  for (const [slotName, blocks] of Object.entries(slots)) {
+    for (let i = 0; i < blocks.length; i++) {
+      if (blocks[i].id === blockId) {
+        return { parentId: null, slotName, index: i }
+      }
+      if (blocks[i].children) {
+        const found = findSlotContainingBlockInChildren(blocks[i].children!, blockId, blocks[i].id)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+
+function findSlotContainingBlockInChildren(children: Record<string, Block[]>, blockId: string, parentId: string): { parentId: string; slotName: string; index: number } | null {
+  for (const [slotName, blocks] of Object.entries(children)) {
+    for (let i = 0; i < blocks.length; i++) {
+      if (blocks[i].id === blockId) {
+        return { parentId, slotName, index: i }
+      }
+      if (blocks[i].children) {
+        const found = findSlotContainingBlockInChildren(blocks[i].children!, blockId, blocks[i].id)
+        if (found) return found
+      }
+    }
+  }
+  return null
+}
+
 // ─── 客户端预览面板 ─────────────────────────────────────────────────────────
 // 直接渲染 page state，零延迟，无需保存
 
@@ -404,7 +522,7 @@ function BlockLibrary() {
     'music':       ['chart-list', 'decade-stack', 'playlist-grid'],
     'data':        ['stats-card'],
     'interaction': ['search-bar'],
-    'layout':      ['spacer'],
+    'layout':      ['spacer', 'layout-container', 'layout-flex', 'layout-grid', 'layout-columns', 'layout-stack', 'layout-card'],
   }
 
   const TAG_LABELS: Record<string, string> = {
@@ -413,7 +531,7 @@ function BlockLibrary() {
     music:       '🎵 音乐',
     data:        '📊 数据',
     interaction: '🔍 交互',
-    layout:      '⬜ 间距',
+    layout:      '📐 布局',
     navigation:  '🧭 导航',
     plugin:      '⚡ 扩展',
   }
@@ -669,7 +787,7 @@ function BlockLibrary() {
           </div>
 
           {/* 积木 Grid */}
-          <div className="flex-1 overflow-y-auto px-3 pb-3">
+          <div className="flex-1 overflow-y-auto px-3 pb-4">
             {pluginBlocksLoading && activeTag === 'plugin' ? (
               <div className="grid grid-cols-2 gap-1.5 mt-2">
                 {[1, 2, 3, 4].map(i => (
@@ -716,6 +834,109 @@ function BlockPreviewWrapper({ block }: { block: Block }) {
   const plugin = blockMetaRegistry.get(block.type)
   if (!plugin) return <div className="h-12 bg-gray-100 rounded flex items-center justify-center text-xs text-gray-400">未知组件</div>
   return <plugin.Preview props={block.props} />
+}
+
+// ─── 布局块画布渲染（支持嵌套 Droppable） ───────────────────────────────────
+
+function CanvasBlock({
+  block,
+  selectedId,
+  onSelect,
+  onDelete,
+}: {
+  block: Block
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onDelete: (blockId: string) => void
+}) {
+  const hasChildren = block.children != null
+
+  if (!hasChildren) {
+    return <BlockPreviewWrapper block={block} />
+  }
+
+  // Layout block：渲染 preview shell + 内部 droppable slots
+  const LAYOUT_COLORS: Record<string, { border: string; bg: string; text: string; label: string }> = {
+    'layout-container': { border: 'border-blue-300', bg: 'bg-blue-50/20', text: 'text-blue-500', label: '📦 容器' },
+    'layout-flex':      { border: 'border-sky-300', bg: 'bg-sky-50/20', text: 'text-sky-500', label: '⬜ 弹性' },
+    'layout-grid':      { border: 'border-green-300', bg: 'bg-green-50/20', text: 'text-green-600', label: '🔳 网格' },
+    'layout-columns':   { border: 'border-amber-300', bg: 'bg-amber-50/20', text: 'text-amber-600', label: '📑 分栏' },
+    'layout-stack':     { border: 'border-purple-300', bg: 'bg-purple-50/20', text: 'text-purple-600', label: '🔲 层叠' },
+    'layout-card':      { border: 'border-gray-300', bg: 'bg-white', text: 'text-gray-600', label: '🃏 卡片' },
+  }
+  const colors = LAYOUT_COLORS[block.type] || { border: 'border-indigo-300', bg: 'bg-indigo-50/20', text: 'text-indigo-500', label: '📦 容器' }
+
+  // Determine layout direction for slots
+  const isHorizontal = block.type === 'layout-columns' || (block.type === 'layout-flex' && block.props.direction !== 'column')
+
+  return (
+    <div className={`border-2 border-dashed ${colors.border} rounded-lg p-2 ${colors.bg}`}>
+      <div className={`text-xs ${colors.text} font-medium mb-2 flex items-center gap-1`}>
+        <span>{colors.label}</span>
+        {block.label && <span className="text-gray-400">· {block.label}</span>}
+      </div>
+      <div className={isHorizontal ? 'flex gap-2' : 'flex flex-col gap-2'}>
+        {Object.entries(block.children!).map(([slotName, childBlocks]) => (
+          <Droppable key={slotName} droppableId={`child::${block.id}::${slotName}`}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`min-h-[60px] flex-1 rounded border border-dashed p-1 transition
+                  ${snapshot.isDraggingOver ? `${colors.border} bg-opacity-50 ${colors.bg}` : 'border-gray-300 bg-gray-50/50'}`}
+              >
+                <div className="text-[10px] text-gray-400 text-center mb-1">{slotName}</div>
+                {childBlocks.map((child, idx) => (
+                  <Draggable key={child.id} draggableId={child.id} index={idx}>
+                    {(dragProvided, dragSnapshot) => (
+                      <div
+                        ref={dragProvided.innerRef}
+                        {...dragProvided.draggableProps}
+                        {...dragProvided.dragHandleProps}
+                        style={{
+                          ...dragProvided.draggableProps.style,
+                          cursor: dragSnapshot.isDragging ? 'grabbing' : 'grab',
+                        }}
+                        className={`mb-1 rounded-xl overflow-hidden border-2 transition-all
+                          ${selectedId === child.id
+                            ? 'border-indigo-500 shadow-md shadow-indigo-100'
+                            : 'border-transparent hover:border-indigo-200'
+                          }
+                          ${dragSnapshot.isDragging ? 'shadow-2xl rotate-1' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); onSelect(child.id) }}
+                      >
+                        <div className="flex items-center gap-2 px-3 py-1 bg-white border-b border-gray-100">
+                          <span className="text-xs text-gray-500">
+                            {child.label
+                              ? <><span className="text-indigo-400">{child.label}</span><span className="text-gray-300 ml-1">· {blockMetaRegistry.get(child.type)?.label}</span></>
+                              : blockMetaRegistry.get(child.type)?.label
+                            }
+                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onDelete(child.id) }}
+                            className="ml-auto text-gray-300 hover:text-red-400 text-xs px-1"
+                          >✕</button>
+                        </div>
+                        <div className="pointer-events-none">
+                          <CanvasBlock block={child} selectedId={selectedId} onSelect={onSelect} onDelete={onDelete} />
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+                {childBlocks.length === 0 && !snapshot.isDraggingOver && (
+                  <div className="flex-1 flex items-center justify-center py-3 text-xs text-gray-300">
+                    拖入积木
+                  </div>
+                )}
+              </div>
+            )}
+          </Droppable>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ─── Canvas Slot（可拖入区域） ────────────────────────────────────────────────
@@ -768,22 +989,23 @@ function CanvasSlot({
                   <div
                     ref={provided.innerRef}
                     {...provided.draggableProps}
-                    className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer
+                    {...provided.dragHandleProps}
+                    className={`rounded-xl overflow-hidden border-2 transition-all
                       ${selectedId === block.id
                         ? 'border-indigo-500 shadow-md shadow-indigo-100'
                         : 'border-transparent hover:border-indigo-200'
                       }
-                      ${snapshot.isDragging ? 'opacity-60 shadow-2xl rotate-1' : ''}`}
+                      ${snapshot.isDragging ? 'shadow-2xl rotate-1' : ''}`}
+                    style={{
+                      ...provided.draggableProps.style,
+                      cursor: snapshot.isDragging ? 'grabbing' : 'grab',
+                      opacity: snapshot.isDragging ? 0.85 : 1,
+                      boxShadow: snapshot.isDragging ? '0 8px 24px rgba(0,0,0,0.12)' : undefined,
+                    }}
                     onClick={() => onSelect(block.id)}
                   >
-                    {/* 拖动手柄 + block 名称标签 */}
+                    {/* block 名称标签（整个 block 均可拖动，已去掉 :: 图标） */}
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-white border-b border-gray-100">
-                      <span
-                        {...provided.dragHandleProps}
-                        className="text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing text-lg leading-none"
-                      >
-                        ⠿
-                      </span>
                       <span className="text-xs text-gray-500">
                         {block.label
                           ? <><span className="text-indigo-400">{block.label}</span><span className="text-gray-300 ml-1">· {blockMetaRegistry.get(block.type)?.label}</span></>
@@ -799,8 +1021,8 @@ function CanvasSlot({
                     </div>
 
                     {/* Block Preview */}
-                    <div className="pointer-events-none">
-                      <BlockPreviewWrapper block={block} />
+                    <div className={block.children ? '' : 'pointer-events-none'}>
+                      <CanvasBlock block={block} selectedId={selectedId} onSelect={onSelect} onDelete={(id) => onDelete(slotName, id)} />
                     </div>
                   </div>
                 )}
@@ -818,33 +1040,70 @@ function CanvasSlot({
 
 // ─── 三端并排预览 ─────────────────────────────────────────────────────────────
 
-const DEVICE_CONFIGS = [
-  { label: '🖥 桌面', width: 1280, scale: 0.45 },
-  { label: '📱 平板', width: 768,  scale: 0.55 },
-  { label: '📱 手机', width: 390,  scale: 0.75 },
-]
+const DEVICES = [
+  { label: '桌面', deviceIcon: '🖥', width: 1280 },
+  { label: '平板', deviceIcon: '📱', width: 768 },
+  { label: '手机', deviceIcon: '📲', width: 390 },
+] as const
 
-function MultiDevicePreview({ pageSlug }: { pageSlug: string }) {
+type DeviceItem = typeof DEVICES[number]
+
+function DeviceFrame({
+  device,
+  url,
+  containerHeight,
+  scale,
+}: {
+  device: DeviceItem
+  url: string
+  containerHeight: number
+  scale: number
+}) {
+  const iframeHeight = containerHeight / scale
+
   return (
-    <div className="flex gap-3 h-full overflow-x-auto px-4 py-3 bg-gray-100">
-      {DEVICE_CONFIGS.map(({ label, width, scale }) => (
-        <div key={width} className="flex-1 min-w-0 flex flex-col">
-          <div className="text-xs text-gray-400 mb-2 text-center">{label} · {width}px</div>
-          <div className="flex-1 relative overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm">
-            <iframe
-              src={`/pages/${pageSlug}?preview=1`}
-              style={{
-                width: `${width}px`,
-                height: '100%',
-                border: 'none',
-                transform: `scale(${scale})`,
-                transformOrigin: 'top left',
-              }}
-              title={`${label} 预览`}
-            />
-          </div>
-        </div>
-      ))}
+    <div className="flex flex-col gap-2">
+      <div className="text-xs text-gray-400 text-center">
+        {device.deviceIcon} {device.label}·{device.width}px
+      </div>
+      <div
+        style={{
+          width: device.width * scale,
+          height: containerHeight,
+          overflow: 'hidden',
+          position: 'relative',
+          borderRadius: 8,
+          border: '1px solid #e5e7eb',
+          background: '#fff',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        }}
+      >
+        <iframe
+          src={url}
+          style={{
+            width: device.width,
+            height: iframeHeight,
+            border: 'none',
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            // 不设置 pointerEvents: 'none'，让滚动事件正常穿透到 iframe
+          }}
+          title={`${device.deviceIcon} ${device.label} 预览`}
+        />
+        {/* 透明遮罩：只阻止点击导航，不阻止 wheel/滚动事件 */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+            cursor: 'default',
+          }}
+          onClickCapture={e => e.preventDefault()}
+        />
+      </div>
     </div>
   )
 }
@@ -862,7 +1121,7 @@ function CanvasArea({
   selectedId: string | null
   onSelect: (id: string) => void
   onDelete: (slotName: string, id: string) => void
-  device: 'desktop' | 'tablet' | 'mobile' | 'multi'
+  device: 'desktop' | 'tablet' | 'mobile'
 }) {
   const ALL_LAYOUT_OPTIONS = [...LAYOUT_OPTIONS, ...COMMUNITY_LAYOUT_OPTIONS]
   const currentLayout = ALL_LAYOUT_OPTIONS.find(l => l.value === page.layout) || LAYOUT_OPTIONS[0]
@@ -915,7 +1174,9 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saveMsg, setSaveMsg] = useState('')
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile' | 'multi'>('desktop')
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+  const [multiPreviewOpen, setMultiPreviewOpen] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1440)
 
   // ── 草稿自动保存状态 ──────────────────────────────────────────────────────
   const [draftSaving, setDraftSaving] = useState(false)
@@ -928,6 +1189,13 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const previewContainerRef = useRef<HTMLDivElement>(null)
   const [previewFit, setPreviewFit] = useState<'responsive' | 'scale'>('responsive')
+
+  // ── 监听窗口宽度（用于全屏多端预览 scale 计算） ────────────────────────────
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -1018,64 +1286,38 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
     for (const [slotName, blocks] of Object.entries(page.slots)) {
       if (blocks.find(b => b.id === blockId)) return slotName
     }
-    return null
+    // Search in children of layout blocks
+    const loc = findSlotContainingBlock(page.slots, blockId)
+    return loc ? loc.slotName : null
   }
 
   function getSelectedBlock(): Block | null {
     if (!page || !selectedId) return null
-    for (const blocks of Object.values(page.slots)) {
-      const found = blocks.find(b => b.id === selectedId)
-      if (found) return found
-    }
-    return null
+    return findBlockInSlots(page.slots, selectedId)
   }
 
   function updateBlockProps(props: Record<string, any>) {
     if (!page || !selectedId) return
-    const newSlots = { ...page.slots }
-    for (const [slot, blocks] of Object.entries(newSlots)) {
-      const idx = blocks.findIndex(b => b.id === selectedId)
-      if (idx >= 0) {
-        const newBlocks = [...blocks]
-        newBlocks[idx] = { ...newBlocks[idx], props }
-        newSlots[slot] = newBlocks
-      }
-    }
+    const newSlots = updateBlockInSlots(page.slots, selectedId, b => ({ ...b, props }))
     setPage({ ...page, slots: newSlots })
   }
 
   function updateBlockStyle(style: Partial<import('@/lib/blocks/types').BlockStyle>) {
     if (!page || !selectedId) return
-    const newSlots = { ...page.slots }
-    for (const [slot, blocks] of Object.entries(newSlots)) {
-      const idx = blocks.findIndex(b => b.id === selectedId)
-      if (idx >= 0) {
-        const newBlocks = [...blocks]
-        newBlocks[idx] = { ...newBlocks[idx], style: { ...newBlocks[idx].style, ...style } }
-        newSlots[slot] = newBlocks
-      }
-    }
+    const newSlots = updateBlockInSlots(page.slots, selectedId, b => ({ ...b, style: { ...b.style, ...style } }))
     setPage({ ...page, slots: newSlots })
   }
 
   function updateBlockLabel(label: string) {
     if (!page || !selectedId) return
-    const newSlots = { ...page.slots }
-    for (const [slot, blocks] of Object.entries(newSlots)) {
-      const idx = blocks.findIndex(b => b.id === selectedId)
-      if (idx >= 0) {
-        const newBlocks = [...blocks]
-        newBlocks[idx] = { ...newBlocks[idx], label: label || undefined }
-        newSlots[slot] = newBlocks
-      }
-    }
+    const newSlots = updateBlockInSlots(page.slots, selectedId, b => ({ ...b, label: label || undefined }))
     setPage({ ...page, slots: newSlots })
   }
 
   function deleteBlock(slotName: string, id: string) {
     if (!page) return
-    const newBlocks = page.slots[slotName].filter(b => b.id !== id)
-    setPage({ ...page, slots: { ...page.slots, [slotName]: newBlocks } })
+    const newSlots = removeBlockFromSlots(page.slots, id)
+    setPage({ ...page, slots: newSlots })
     if (selectedId === id) setSelectedId(null)
   }
 
@@ -1093,9 +1335,13 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
     if (!destination) return
     if (!page) return
 
-    if (source.droppableId === 'palette') {
-      // 从积木库拖到画布：在 destination.index 处插入新 block
-      if (destination.droppableId === 'palette') return // 拖回积木库，忽略
+    const isFromPalette = source.droppableId === 'palette'
+    const isDstChild = destination.droppableId.startsWith('child::')
+    const isDstSlot = destination.droppableId.startsWith('slot-')
+
+    if (isFromPalette) {
+      // 从积木库拖到画布
+      if (destination.droppableId === 'palette') return
 
       const blockType = draggableId.replace('palette-', '')
       const plugin = blockMetaRegistry.get(blockType)
@@ -1105,28 +1351,49 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
         id: genId(),
         type: blockType,
         props: { ...plugin.defaultProps },
+        children: getDefaultChildren(blockType),
       }
 
-      const slotName = destination.droppableId.replace('slot-', '')
-      const newBlocks = [...(page.slots[slotName] || [])]
-      newBlocks.splice(destination.index, 0, newBlock)
-
-      setPage({ ...page, slots: { ...page.slots, [slotName]: newBlocks } })
+      if (isDstChild) {
+        // 拖入布局块的子插槽：child::{parentId}::{slotName}
+        const parts = destination.droppableId.split('::')
+        const parentId = parts[1]
+        const slotName = parts[2]
+        const newSlots = insertBlockIntoSlots(page.slots, parentId, slotName, destination.index, newBlock)
+        setPage({ ...page, slots: newSlots })
+      } else if (isDstSlot) {
+        // 拖入顶层 slot
+        const slotName = destination.droppableId.replace('slot-', '')
+        const newBlocks = [...(page.slots[slotName] || [])]
+        newBlocks.splice(destination.index, 0, newBlock)
+        setPage({ ...page, slots: { ...page.slots, [slotName]: newBlocks } })
+      }
       setSelectedId(newBlock.id)
     } else {
-      // 画布内重排（含跨 slot）
-      const srcSlotName = source.droppableId.replace('slot-', '')
-      const dstSlotName = destination.droppableId.replace('slot-', '')
+      // 画布内重排（含跨 slot、跨容器）
 
-      // 同 slot 同位置：无需操作
-      if (srcSlotName === dstSlotName && source.index === destination.index) return
+      // 找到被拖动的 block
+      const movedBlock = findBlockInSlots(page.slots, draggableId)
+      if (!movedBlock) return
 
-      const newSlots = Object.fromEntries(
-        Object.entries(page.slots).map(([k, v]) => [k, [...(v as any[])]])
-      )
+      // 同位置不操作
+      if (source.droppableId === destination.droppableId && source.index === destination.index) return
 
-      const [moved] = newSlots[srcSlotName].splice(source.index, 1)
-      newSlots[dstSlotName].splice(destination.index, 0, moved)
+      // 先从原位置删除
+      let newSlots = removeBlockFromSlots(page.slots, draggableId)
+
+      // 然后插入到新位置
+      if (isDstChild) {
+        const parts = destination.droppableId.split('::')
+        const parentId = parts[1]
+        const slotName = parts[2]
+        newSlots = insertBlockIntoSlots(newSlots, parentId, slotName, destination.index, movedBlock)
+      } else if (isDstSlot) {
+        const slotName = destination.droppableId.replace('slot-', '')
+        const arr = [...(newSlots[slotName] || [])]
+        arr.splice(destination.index, 0, movedBlock)
+        newSlots[slotName] = arr
+      }
 
       setPage({ ...page, slots: newSlots })
     }
@@ -1168,6 +1435,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
   const selectedBlock = getSelectedBlock()
 
   return (
+    <>
     <DragDropContext onDragEnd={handleDragEnd}>
       <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
 
@@ -1236,13 +1504,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                 {d.icon}
               </button>
             ))}
-            <button
-              onClick={() => setDevice('multi')}
-              title="三端并排预览"
-              className={`px-2 py-1 text-sm rounded transition ${device === 'multi' ? 'bg-white shadow text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              ⊞
-            </button>
+            
           </div>
 
           {/* 草稿状态 */}
@@ -1305,23 +1567,19 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                   在新标签打开 ↗
                 </a>
                 <span className="text-xs text-gray-400">
-                  {device === 'desktop' ? '🖥 1280px' : device === 'tablet' ? '📱 768px' : device === 'mobile' ? '📲 390px' : '🔲 多端'}
+                  {device === 'desktop' ? '🖥 1280px' : device === 'tablet' ? '📱 768px' : '📲 390px'}
                 </span>
               </div>
               <div className="flex-1 overflow-hidden">
-                {device === 'multi' ? (
-                  <MultiDevicePreview pageSlug={page.slug} />
-                ) : (
-                  <div className="h-full overflow-y-auto p-6">
-                    <CanvasArea
-                      page={page}
-                      selectedId={selectedId}
-                      onSelect={id => setSelectedId(id)}
-                      onDelete={(slot, id) => deleteBlock(slot, id)}
-                      device={device}
-                    />
-                  </div>
-                )}
+                <div className="h-full overflow-y-auto p-6">
+                  <CanvasArea
+                    page={page}
+                    selectedId={selectedId}
+                    onSelect={id => setSelectedId(id)}
+                    onDelete={(slot, id) => deleteBlock(slot, id)}
+                    device={device}
+                  />
+                </div>
               </div>
             </div>
           </Panel>
@@ -1438,6 +1696,13 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                           className={`px-2 py-0.5 rounded-md text-xs transition ${previewFit === 'scale' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                         >适配</button>
                       </div>
+                      <button
+                        onClick={() => setMultiPreviewOpen(true)}
+                        title="三端并排全屏预览"
+                        className="ml-2 px-2 py-0.5 rounded-md text-xs text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                      >
+                        多端
+                      </button>
                     </div>
                     {/* 容器 ref 供 ResizeObserver 监听；overflow-hidden 防止 scale 模式溢出 */}
                     <div ref={previewContainerRef} className="flex-1 overflow-hidden relative bg-gray-50">
@@ -1467,5 +1732,55 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
         </Group>
       </div>
     </DragDropContext>
+
+    {/* ── 全屏三端预览 Modal ── */}
+    {multiPreviewOpen && (() => {
+      const availableWidth = windowWidth - 96
+      const containerHeight = (typeof window !== 'undefined' ? window.innerHeight : 900) - 120
+      const widthRatios: Record<number, number> = { 1280: 0.45, 768: 0.30, 390: 0.25 }
+      return (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#1a1a2e' }}
+          className="flex flex-col"
+        >
+          {/* 顶部栏 */}
+          <div className="flex items-center justify-between px-6 py-3 border-b border-white/10">
+            <div className="text-white/60 text-sm">/pages/{page.slug} — 多端预览</div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPreviewKey(k => k + 1)}
+                className="text-white/40 hover:text-white text-xs px-3 py-1 rounded border border-white/20 hover:border-white/40 transition"
+              >
+                刷新
+              </button>
+              <button
+                onClick={() => setMultiPreviewOpen(false)}
+                className="text-white/40 hover:text-white transition text-lg leading-none"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+
+          {/* 三端内容区 */}
+          <div className="flex-1 flex items-start justify-center gap-6 px-8 py-6 overflow-x-auto">
+            {DEVICES.map(device => {
+              const containerWidth = availableWidth * widthRatios[device.width]
+              const scale = containerWidth / device.width
+              return (
+                <DeviceFrame
+                  key={device.width}
+                  device={device}
+                  url={`/pages/${page.slug}?preview=1`}
+                  containerHeight={containerHeight}
+                  scale={scale}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )
+    })()}
+    </>
   )
 }

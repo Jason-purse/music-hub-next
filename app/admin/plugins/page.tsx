@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import type { PluginConfigField } from '@/types/plugin'
+import type { ConfigFieldSchema } from '@/types/plugin'
 import { PluginWCHost } from '@/components/PluginWCHost'
 
 interface PluginItem {
@@ -14,9 +14,19 @@ interface PluginItem {
   enabled: boolean
   builtin?: boolean
   defaultEnabled?: boolean
-  config?: { schema: Record<string, PluginConfigField> }
+  config?: { schema: Record<string, ConfigFieldSchema> }
   configUI?: string
   userConfig: Record<string, unknown>
+}
+
+interface MarketPlugin {
+  id: string
+  name: string
+  version: string
+  description?: string
+  author?: string
+  tags?: string[]
+  registryUrl?: string
 }
 
 export default function PluginsPage() {
@@ -26,6 +36,14 @@ export default function PluginsPage() {
   const [configPlugin, setConfigPlugin] = useState<PluginItem | null>(null)
   const [configValues, setConfigValues] = useState<Record<string, unknown>>({})
   const [saving, setSaving] = useState(false)
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'installed' | 'market'>('installed')
+
+  // Market state
+  const [marketPlugins, setMarketPlugins] = useState<MarketPlugin[]>([])
+  const [marketLoading, setMarketLoading] = useState(false)
+  const [installingId, setInstallingId] = useState<string | null>(null)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -42,6 +60,18 @@ export default function PluginsPage() {
   }, [])
 
   useEffect(() => { fetchPlugins() }, [fetchPlugins])
+
+  // Load market plugins when switching to market tab
+  useEffect(() => {
+    if (activeTab === 'market') {
+      setMarketLoading(true)
+      fetch('/api/plugins/market')
+        .then(r => r.json())
+        .then(data => setMarketPlugins(data.plugins || []))
+        .catch(() => setMarketPlugins([]))
+        .finally(() => setMarketLoading(false))
+    }
+  }, [activeTab])
 
   const toggle = async (id: string, enabled: boolean) => {
     const res = await fetch(`/api/plugins/${id}`, {
@@ -68,9 +98,30 @@ export default function PluginsPage() {
     }
   }
 
+  const handleInstall = async (plugin: MarketPlugin) => {
+    setInstallingId(plugin.id)
+    try {
+      const res = await fetch('/api/plugins/market/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: plugin.id, registryUrl: plugin.registryUrl }),
+      })
+      if (res.ok) {
+        showToast('✅ 安装成功')
+        await fetchPlugins()
+      } else {
+        const err = await res.json()
+        showToast(`❌ ${err.error || '安装失败'}`)
+      }
+    } catch {
+      showToast('❌ 安装失败，请重试')
+    } finally {
+      setInstallingId(null)
+    }
+  }
+
   function openConfig(plugin: PluginItem) {
     setConfigPlugin(plugin)
-    // 只在 schema 表单模式下初始化 configValues
     if (!plugin.configUI) {
       const schema = plugin.config?.schema || {}
       const initial: Record<string, unknown> = {}
@@ -100,7 +151,7 @@ export default function PluginsPage() {
     setSaving(false)
   }
 
-  function renderField(key: string, field: PluginConfigField) {
+  function renderField(key: string, field: ConfigFieldSchema) {
     const value = configValues[key]
     const onChange = (v: unknown) => setConfigValues(prev => ({ ...prev, [key]: v }))
 
@@ -116,8 +167,8 @@ export default function PluginsPage() {
             onChange={e => onChange(e.target.value)}
             className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-300 focus:outline-none dark:bg-gray-700 dark:text-gray-100"
           >
-            {(field.options || []).map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {(field.options || []).map((opt: { label: string; value: string | number | boolean }) => (
+              <option key={String(opt.value)} value={String(opt.value)}>{opt.label}</option>
             ))}
           </select>
         )}
@@ -137,7 +188,7 @@ export default function PluginsPage() {
             className="w-12 h-10 border border-gray-200 rounded-lg cursor-pointer"
           />
         )}
-        {field.type === 'toggle' && (
+        {field.type === 'boolean' && (
           <button
             onClick={() => onChange(!value)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${value ? 'bg-indigo-600' : 'bg-gray-200'}`}
@@ -157,7 +208,6 @@ export default function PluginsPage() {
     )
   }
 
-  // 判断插件是否有配置能力（schema 表单或 configUI WC）
   const hasConfig = (plugin: PluginItem) => {
     if (plugin.configUI) return true
     return plugin.config?.schema && Object.keys(plugin.config.schema).length > 0
@@ -196,7 +246,6 @@ export default function PluginsPage() {
         )}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* config button — 支持 configUI 和 schema 两种模式 */}
         {hasConfig(plugin) && (
           <button
             onClick={() => openConfig(plugin)}
@@ -205,7 +254,6 @@ export default function PluginsPage() {
             配置
           </button>
         )}
-        {/* delete for community */}
         {!plugin.builtin && (
           <button
             onClick={() => handleDelete(plugin)}
@@ -214,7 +262,6 @@ export default function PluginsPage() {
             卸载
           </button>
         )}
-        {/* toggle */}
         <label className="flex items-center cursor-pointer">
           <div className="relative">
             <input
@@ -233,6 +280,7 @@ export default function PluginsPage() {
 
   const builtinPlugins = plugins.filter(p => p.tier === 'builtin' || p.tier === 'standard' || p.tier === 'core' || (p.builtin && !p.tier))
   const communityPlugins = plugins.filter(p => !p.builtin && p.tier === 'community')
+  const installedIds = new Set(plugins.map(p => p.id))
 
   if (loading) return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -258,35 +306,135 @@ export default function PluginsPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-6 py-8">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           管理站点功能插件。内置插件随系统提供，可以关闭但无法卸载。
           开关变更后刷新页面生效。
         </p>
 
-        {builtinPlugins.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              内置插件
-            </h2>
-            <div className="space-y-3">
-              {builtinPlugins.map(p => <PluginCard key={p.id} plugin={p} />)}
-            </div>
-          </section>
+        {/* Tab 切换 */}
+        <div className="flex gap-1 border-b border-gray-200 mb-6">
+          <button
+            onClick={() => setActiveTab('installed')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'installed'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            已安装
+          </button>
+          <button
+            onClick={() => setActiveTab('market')}
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'market'
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            插件市场
+          </button>
+        </div>
+
+        {/* 已安装 Tab */}
+        {activeTab === 'installed' && (
+          <>
+            {builtinPlugins.length > 0 && (
+              <section className="mb-8">
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                  内置插件
+                </h2>
+                <div className="space-y-3">
+                  {builtinPlugins.map(p => <PluginCard key={p.id} plugin={p} />)}
+                </div>
+              </section>
+            )}
+
+            {communityPlugins.length > 0 && (
+              <section>
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                  已安装插件
+                </h2>
+                <div className="space-y-3">
+                  {communityPlugins.map(p => <PluginCard key={p.id} plugin={p} />)}
+                </div>
+              </section>
+            )}
+
+            {plugins.length === 0 && (
+              <div className="text-center text-gray-400 py-16">暂无插件</div>
+            )}
+          </>
         )}
 
-        {communityPlugins.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
-              已安装插件
-            </h2>
-            <div className="space-y-3">
-              {communityPlugins.map(p => <PluginCard key={p.id} plugin={p} />)}
-            </div>
-          </section>
-        )}
-
-        {plugins.length === 0 && (
-          <div className="text-center text-gray-400 py-16">暂无插件</div>
+        {/* 插件市场 Tab */}
+        {activeTab === 'market' && (
+          <div>
+            {marketLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 animate-pulse">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
+                        <div className="h-3 bg-gray-100 dark:bg-gray-600 rounded w-2/3" />
+                      </div>
+                      <div className="h-8 w-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : marketPlugins.length === 0 ? (
+              <div className="text-center text-gray-400 py-16">
+                插件市场暂时不可用，请检查注册表配置
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {marketPlugins.map(plugin => (
+                  <div key={plugin.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700 flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{plugin.name}</span>
+                        <span className="text-xs text-gray-400">v{plugin.version}</span>
+                        {plugin.author && (
+                          <span className="text-xs text-gray-400">by {plugin.author}</span>
+                        )}
+                      </div>
+                      {plugin.description && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{plugin.description}</p>
+                      )}
+                      {plugin.tags && plugin.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {plugin.tags.map(tag => (
+                            <span key={tag} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-shrink-0">
+                      {installedIds.has(plugin.id) ? (
+                        <button
+                          disabled
+                          className="px-3 py-1.5 text-sm text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg cursor-not-allowed"
+                        >
+                          已安装
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleInstall(plugin)}
+                          disabled={installingId === plugin.id}
+                          className="px-3 py-1.5 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {installingId === plugin.id ? '安装中…' : '安装'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -300,7 +448,6 @@ export default function PluginsPage() {
               <button onClick={() => setConfigPlugin(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {/* configUI 模式：渲染插件自定义配置 WC */}
               {configPlugin.configUI ? (
                 <PluginWCHost
                   pluginId={configPlugin.id}
@@ -309,13 +456,11 @@ export default function PluginsPage() {
                   config={configPlugin.userConfig}
                 />
               ) : (
-                /* schema 表单模式 */
                 Object.entries(configPlugin.config?.schema || {}).map(([key, field]) =>
                   renderField(key, field)
                 )
               )}
             </div>
-            {/* 只在 schema 表单模式下显示保存按钮；configUI 模式由 WC 自行处理 */}
             {!configPlugin.configUI && (
               <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-2 justify-end">
                 <button

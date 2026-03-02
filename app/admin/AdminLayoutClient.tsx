@@ -137,24 +137,39 @@ function Sidebar({
     }`
 
   return (
-    <aside className={`${isCollapsed ? 'w-14' : 'w-56'} transition-[width] duration-200 ease-in-out h-full bg-white dark:bg-[var(--music-surface)] border-r border-gray-100 dark:border-[var(--music-border)] flex flex-col overflow-hidden`}>
+    <aside className={`${isCollapsed ? 'w-14' : 'w-56'} transition-[width] duration-200 ease-in-out h-full bg-white dark:bg-[var(--music-surface)] border-r border-gray-100 dark:border-[var(--music-border)] flex flex-col overflow-hidden relative group/sidebar`}>
+      {/* 浮动折叠/展开按钮 — 右边缘，始终可见，对标 Notion/Linear */}
+      {onToggleCollapse && (
+        <button
+          onClick={onToggleCollapse}
+          title={isCollapsed ? '展开侧边栏' : '折叠侧边栏'}
+          className="hidden md:flex absolute -right-3 top-16 z-50 items-center justify-center w-6 h-6 rounded-full bg-white dark:bg-[var(--music-surface)] border border-gray-200 dark:border-[var(--music-border)] shadow-sm text-gray-400 hover:text-indigo-500 hover:border-indigo-300 hover:shadow-md transition-all duration-150"
+        >
+          <svg className="w-3 h-3 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            {isCollapsed
+              ? <path d="M9 18l6-6-6-6" />
+              : <path d="M15 18l-6-6 6-6" />
+            }
+          </svg>
+        </button>
+      )}
+      {/* 返回前台 — 顶部，始终可见 */}
+      <Link
+        href="/"
+        onClick={onClose}
+        title="返回前台"
+        className={`flex items-center ${isCollapsed ? 'justify-center py-2 px-0' : 'gap-1.5 px-4 py-2'} text-xs text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-[var(--music-accent-light)] transition border-b border-gray-50 dark:border-[var(--music-border)]`}
+      >
+        <span>←</span>
+        {!isCollapsed && <span>返回前台</span>}
+      </Link>
+
       {/* Logo 区 */}
-      <div className={`px-4 py-5 border-b border-gray-50 dark:border-[var(--music-border)] flex items-center ${isCollapsed ? 'justify-center gap-1' : 'justify-between'}`}>
+      <div className={`px-4 py-4 border-b border-gray-50 dark:border-[var(--music-border)] flex items-center ${isCollapsed ? 'justify-center gap-1' : 'justify-between'}`}>
         {isCollapsed ? (
           <>
             <span className="text-xl">🎶</span>
-            {/* 桌面端折叠按钮（折叠态） */}
-            {onToggleCollapse && (
-              <button
-                onClick={onToggleCollapse}
-                title="展开侧边栏"
-                className="hidden md:flex items-center justify-center w-6 h-6 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </button>
-            )}
+
           </>
         ) : (
           <>
@@ -166,18 +181,7 @@ function Sidebar({
               </div>
             </div>
             <div className="flex items-center gap-1">
-              {/* 桌面端折叠按钮，移动端不显示 */}
-              {onToggleCollapse && (
-                <button
-                  onClick={onToggleCollapse}
-                  title="折叠侧边栏"
-                  className="hidden md:flex items-center justify-center w-6 h-6 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M15 18l-6-6 6-6" />
-                  </svg>
-                </button>
-              )}
+
               {onClose && (
                 <button onClick={onClose} className="md:hidden p-1 text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)]">
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -252,18 +256,7 @@ function Sidebar({
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-gray-50 dark:border-[var(--music-border)] space-y-1">
-        {/* 返回前台 */}
-        <Link
-          href="/"
-          onClick={onClose}
-          title={isCollapsed ? '返回前台' : undefined}
-          className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-2 px-3'} py-2 text-sm text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)] hover:bg-gray-100 dark:hover:bg-[var(--music-surface-hover)] rounded-lg transition`}
-        >
-          <span>←</span>
-          {!isCollapsed && <span>返回前台</span>}
-        </Link>
-      </div>
+
     </aside>
   )
 }
@@ -276,14 +269,20 @@ export function AdminLayoutClient({ children, pluginMenuItems = [] }: Props) {
   const [logging, setLogging] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const t = localStorage.getItem('admin_token') || ''
     setToken(t)
     const saved = localStorage.getItem('admin-sidebar-collapsed')
-    if (saved === 'true') setCollapsed(true)
+    // 进入页面编辑器时强制折叠
+    if (pathname.includes('/edit')) {
+      setCollapsed(true)
+    } else {
+      setCollapsed(saved === 'true')
+    }
     setMounted(true)
-  }, [])
+  }, [pathname])
 
   function toggleCollapse() {
     const next = !collapsed

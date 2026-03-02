@@ -11,6 +11,11 @@ import { ChartListPreview } from './previews/chart-list.preview'
 import { StatsCardPreview } from './previews/stats-card.preview'
 import { PlaylistGridPreview } from './previews/playlist-grid.preview'
 import { DecadeStackPreview } from './previews/decade-stack.preview'
+import { LayoutBoxPreview as LayoutContainerPreview } from './previews/layout-box.preview'
+import { LayoutSectionPreview as LayoutFlexPreview } from './previews/layout-section.preview'
+import { LayoutGridPreview } from './previews/layout-grid.preview'
+import { LayoutColumnsPreview } from './previews/layout-columns.preview'
+import { LayoutStackPreview } from './previews/layout-stack.preview' 
 
 export interface BlockMeta {
   type: string
@@ -127,6 +132,84 @@ const _meta: BlockMeta[] = [
       { name: 'showSongs', label: '显示歌曲数', type: 'switch', defaultValue: true },
       { name: 'showPlaylists', label: '显示歌单数', type: 'switch', defaultValue: true },
       { name: 'showDecades', label: '显示年代跨度', type: 'switch', defaultValue: true },
+    ],
+  },
+  {
+    type: 'layout-container',
+    label: '容器',
+    icon: '📦',
+    defaultProps: { maxWidth: 1200, centered: true, paddingX: 24, paddingY: 48, background: 'transparent' },
+    Preview: LayoutContainerPreview,
+    fields: [
+      { name: 'maxWidth', label: '最大宽度 (px)', type: 'number' },
+      { name: 'centered', label: '居中', type: 'switch' },
+      { name: 'paddingX', label: '横向内边距', type: 'number' },
+      { name: 'paddingY', label: '纵向内边距', type: 'number' },
+      { name: 'background', label: '背景色', type: 'color' },
+    ],
+  },
+  {
+    type: 'layout-flex',
+    label: '弹性排列',
+    icon: '⬜',
+    defaultProps: { direction: 'row', gap: 16, align: 'stretch', justify: 'flex-start', wrap: false, padding: 0 },
+    Preview: LayoutFlexPreview,
+    fields: [
+      { name: 'direction', label: '方向', type: 'select', options: [{ label: '水平', value: 'row' }, { label: '垂直', value: 'column' }] },
+      { name: 'gap', label: '间距 (px)', type: 'number' },
+      { name: 'align', label: '对齐', type: 'select', options: [{ label: '顶部', value: 'start' }, { label: '居中', value: 'center' }, { label: '底部', value: 'end' }, { label: '拉伸', value: 'stretch' }] },
+      { name: 'justify', label: '主轴对齐', type: 'select', options: [{ label: '左', value: 'flex-start' }, { label: '中', value: 'center' }, { label: '右', value: 'flex-end' }, { label: '两端', value: 'space-between' }] },
+      { name: 'wrap', label: '换行', type: 'switch' },
+      { name: 'padding', label: '内边距', type: 'number' },
+    ],
+  },
+  {
+    type: 'layout-grid',
+    label: '网格',
+    icon: '🔳',
+    defaultProps: { columns: 3, gap: 16, padding: 0 },
+    Preview: LayoutGridPreview,
+    fields: [
+      { name: 'columns', label: '列数', type: 'number' },
+      { name: 'gap', label: '间距 (px)', type: 'number' },
+      { name: 'padding', label: '内边距', type: 'number' },
+    ],
+  },
+  {
+    type: 'layout-columns',
+    label: '分栏',
+    icon: '📑',
+    defaultProps: { ratio: '1:1', gap: 24, align: 'start' },
+    Preview: LayoutColumnsPreview,
+    fields: [
+      { name: 'ratio', label: '比例', type: 'select', options: [{ label: '1:1', value: '1:1' }, { label: '2:1', value: '2:1' }, { label: '1:2', value: '1:2' }] },
+      { name: 'gap', label: '间距 (px)', type: 'number' },
+      { name: 'align', label: '对齐', type: 'select', options: [{ label: '顶部', value: 'start' }, { label: '居中', value: 'center' }, { label: '底部', value: 'end' }] },
+    ],
+  },
+  {
+    type: 'layout-stack',
+    label: '层叠',
+    icon: '🔲',
+    defaultProps: { minHeight: 320, align: 'center', justify: 'center' },
+    Preview: LayoutStackPreview,
+    fields: [
+      { name: 'minHeight', label: '最小高度 (px)', type: 'number' },
+      { name: 'align', label: '水平对齐', type: 'select', options: [{ label: '左', value: 'start' }, { label: '中', value: 'center' }, { label: '右', value: 'end' }] },
+      { name: 'justify', label: '垂直对齐', type: 'select', options: [{ label: '顶', value: 'start' }, { label: '中', value: 'center' }, { label: '底', value: 'end' }] },
+    ],
+  },
+  {
+    type: 'layout-card',
+    label: '卡片',
+    icon: '🃏',
+    defaultProps: { padding: 16, shadow: 'md', borderRadius: 8, bgColor: '#ffffff' },
+    Preview: LayoutContainerPreview,
+    fields: [
+      { name: 'padding', label: '内边距', type: 'number' },
+      { name: 'shadow', label: '阴影', type: 'select', options: [{ label: '无', value: 'none' }, { label: '小', value: 'sm' }, { label: '中', value: 'md' }, { label: '大', value: 'lg' }] },
+      { name: 'borderRadius', label: '圆角', type: 'number' },
+      { name: 'bgColor', label: '背景色', type: 'color' },
     ],
   },
 ]

@@ -3,6 +3,33 @@
  * 驱动整个插件系统的核心类型
  */
 
+// ── 配置字段 Schema（Tier 1：manifest 声明，平台自动渲染） ──────────────────────
+
+export type ConfigFieldType =
+  | 'text' | 'password' | 'textarea'
+  | 'number' | 'boolean' | 'select'
+  | 'color' | 'url' | 'email'
+
+export interface ConfigFieldSchema {
+  key: string
+  type: ConfigFieldType
+  label: string
+  description?: string
+  default?: unknown
+  required?: boolean
+  placeholder?: string
+  // select 专用
+  options?: Array<{ label: string; value: string | number | boolean }>
+  // number 专用
+  min?: number
+  max?: number
+  step?: number
+  // 分组（可选，同 group 的字段会被框在一起）
+  group?: string
+}
+
+// ── Slot / Route / Menu / Block 声明 ────────────────────────────────────────────
+
 export interface PluginSlotDecl {
   name: string        // Slot 名称，对应 <PluginSlot name="...">
   component: string   // WC 标签名
@@ -50,12 +77,7 @@ export interface PluginManifest {
   adminMenu?: PluginAdminMenuDecl[]
   blocks?: PluginBlockDecl[]
   script?: string
-  configSchema?: Record<string, {
-    type: 'string' | 'number' | 'boolean'
-    label: string
-    default?: unknown
-    description?: string
-  }>
-  configUI?: string   // WC 标签名，若有则在 admin 插件配置页用它替代 schema 表单
+  configSchema?: ConfigFieldSchema[]   // Tier 1：manifest 声明字段，平台自动渲染
+  // Tier 2：adminMenu[0] 即为自定义配置页入口（Web Component 方式）
   dataEndpoints?: PluginDataEndpoint[]
 }

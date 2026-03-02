@@ -17,21 +17,20 @@ const BUILTIN_MANIFESTS: PluginManifest[] = [
     defaultEnabled: true,
     uiSlots: ['navbar'],
     description: '浅色/深色/护眼/跟随系统四态切换',
-    config: {
-      schema: {
-        default: {
-          type: 'select',
-          label: '默认显示模式',
-          default: 'system',
-          options: [
-            { value: 'system', label: '跟随系统' },
-            { value: 'light', label: '浅色模式' },
-            { value: 'dark', label: '深色模式' },
-            { value: 'eye-care', label: '护眼模式' },
-          ],
-        },
+    configSchema: [
+      {
+        key: 'default',
+        type: 'select',
+        label: '默认显示模式',
+        default: 'system',
+        options: [
+          { value: 'system', label: '跟随系统' },
+          { value: 'light', label: '浅色模式' },
+          { value: 'dark', label: '深色模式' },
+          { value: 'eye-care', label: '护眼模式' },
+        ],
       },
-    },
+    ],
   },
   {
     id: 'back-to-top',
@@ -44,20 +43,19 @@ const BUILTIN_MANIFESTS: PluginManifest[] = [
     defaultEnabled: true,
     uiSlots: ['floating'],
     description: '页面右下角回到顶部按钮，滚动超过阈值后出现',
-    config: {
-      schema: {
-        threshold: {
-          type: 'number',
-          label: '触发滚动距离 (px)',
-          default: 0,
-          description: '滚动超过此距离后按钮出现',
-        },
+    configSchema: [
+      {
+        key: 'threshold',
+        type: 'number',
+        label: '触发滚动距离 (px)',
+        default: 0,
+        description: '滚动超过此距离后按钮出现',
       },
-    },
+    ],
   },
   {
     id: 'reading-progress',
-    name: '阅读进度条',
+    name: '阅读��度条',
     version: '1.0.0',
     category: 'ui',
     tier: 'standard',
@@ -66,20 +64,23 @@ const BUILTIN_MANIFESTS: PluginManifest[] = [
     defaultEnabled: false,
     uiSlots: ['top-bar'],
     description: '页面顶部进度条，显示当前滚动位置，适合长内容页面',
-    config: {
-      schema: {
-        color: {
-          type: 'color',
-          label: '进度条颜色',
-          default: '#6366f1',
-        },
-        height: {
-          type: 'number',
-          label: '高度 (px)',
-          default: 3,
-        },
+    configSchema: [
+      {
+        key: 'color',
+        type: 'color',
+        label: '进度条颜色',
+        default: '#6366f1',
       },
-    },
+      {
+        key: 'height',
+        type: 'number',
+        label: '高度 (px)',
+        default: 3,
+        min: 1,
+        max: 10,
+        step: 1,
+      },
+    ],
   },
 ]
 

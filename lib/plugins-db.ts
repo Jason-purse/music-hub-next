@@ -126,11 +126,11 @@ function rowToPlugin(row: any): InstalledPlugin {
     defaultEnabled: manifest.defaultEnabled,
     uiSlots: manifest.uiSlots,
     description: manifest.description,
-    config: manifest.config,
+    configSchema: manifest.configSchema,
+    adminMenu: manifest.adminMenu,
     slots: manifest.slots,
     apiPrefix: manifest.apiPrefix,
     pagePrefix: manifest.pagePrefix,
-    configUI: manifest.configUI,
     userConfig,
     installedAt: row.installed_at,
   }
