@@ -7,6 +7,7 @@
  * 2. script 只从内部 /api/plugins/[id]/script 加载
  * 3. 全程 DOM API，零 innerHTML / dangerouslySetInnerHTML
  * 4. 属性通过 setAttribute 设置，不拼接 HTML 字符串
+ * 5. 挂载前注入 window.__MusicHub__ SDK
  */
 import { useEffect, useRef } from 'react'
 
@@ -27,6 +28,98 @@ interface Props {
   attrs?: Record<string, string>
 }
 
+/**
+ * 注入 MusicHub Plugin SDK 到 window.__MusicHub__
+ * 每次 pluginId 变化时更新 SDK 上下文
+ */
+function injectSDK(pluginId: string) {
+  const getAdminToken = () => {
+    try { return localStorage.getItem('admin-token') || '' } catch { return '' }
+  }
+
+  const sdk = {
+    pluginId,
+
+    // ── Config API ──────────────────────────────────────────────────────
+    async getConfig() {
+      const res = await fetch(`/api/plugins/${pluginId}/config`)
+      if (!res.ok) throw new Error(`getConfig failed: ${res.status}`)
+      return res.json()
+    },
+
+    async saveConfig(data: Record<string, unknown>) {
+      const res = await fetch(`/api/plugins/${pluginId}/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': getAdminToken(),
+        },
+        body: JSON.stringify(data),
+      })
+      if (!res.ok) throw new Error(`saveConfig failed: ${res.status}`)
+      return res.json()
+    },
+
+    // ── Data Store API ──────────────────────────────────────────────────
+    async getData() {
+      const res = await fetch(`/api/plugins/${pluginId}/data`)
+      if (!res.ok) throw new Error(`getData failed: ${res.status}`)
+      return res.json()
+    },
+
+    async setData(key: string, value: unknown) {
+      const res = await fetch(`/api/plugins/${pluginId}/data`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-token': getAdminToken(),
+        },
+        body: JSON.stringify({ key, value }),
+      })
+      if (!res.ok) throw new Error(`setData failed: ${res.status}`)
+      return res.json()
+    },
+
+    async deleteData(key: string) {
+      const res = await fetch(`/api/plugins/${pluginId}/data/${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-token': getAdminToken() },
+      })
+      if (!res.ok) throw new Error(`deleteData failed: ${res.status}`)
+      return res.json()
+    },
+
+    // ── Platform Query API ──────────────────────────────────────────────
+    async querySongs(params: Record<string, string | number> = {}) {
+      const qs = new URLSearchParams()
+      for (const [k, v] of Object.entries(params)) {
+        qs.set(k, String(v))
+      }
+      const res = await fetch(`/api/plugins/${pluginId}/query/songs?${qs}`)
+      if (!res.ok) throw new Error(`querySongs failed: ${res.status}`)
+      return res.json()
+    },
+
+    async queryPlaylists(params: Record<string, string | number> = {}) {
+      const qs = new URLSearchParams()
+      for (const [k, v] of Object.entries(params)) {
+        qs.set(k, String(v))
+      }
+      const res = await fetch(`/api/plugins/${pluginId}/query/playlists?${qs}`)
+      if (!res.ok) throw new Error(`queryPlaylists failed: ${res.status}`)
+      return res.json()
+    },
+
+    async queryStats() {
+      const res = await fetch(`/api/plugins/${pluginId}/query/stats`)
+      if (!res.ok) throw new Error(`queryStats failed: ${res.status}`)
+      return res.json()
+    },
+  }
+
+  ;(window as any).__MusicHub__ = sdk
+}
+
 export function PluginWCHost({ pluginId, tagName, scriptUrl, config, attrs }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -39,6 +132,9 @@ export function PluginWCHost({ pluginId, tagName, scriptUrl, config, attrs }: Pr
     if (!containerRef.current) return
 
     const container = containerRef.current
+
+    // 注入 SDK（在加载 script 之前）
+    injectSDK(pluginId)
 
     // 懒加载 script（同一插件脚本只加载一次）
     const scriptKey = `data-plugin-script-${pluginId}`

@@ -1,14 +1,25 @@
 {
   "id": "hello-plugin",
   "name": "Hello Plugin",
-  "version": "1.0.0",
-  "description": "插件系统示例：验证 Slot 注入 + 后台管理页 + WC 渲染",
+  "version": "1.1.0",
+  "description": "插件系统示例：验证 Slot 注入 + 后台管理页 + WC 渲染 + SDK 数据 API",
   "tier": "community",
   "script": "webcomponent/index.js",
+  "configUI": "hello-config",
   "slots": [
     { "name": "main-footer", "component": "hello-banner" }
   ],
   "adminMenu": [
     { "icon": "👋", "label": "Hello 插件", "path": "/", "component": "hello-admin" }
+  ],
+  "blocks": [
+    {
+      "type": "hello-stats-card",
+      "label": "站点统计",
+      "icon": "📊",
+      "description": "显示站点歌曲/歌单统计数据",
+      "component": "hello-stats-card",
+      "category": "数据"
+    }
   ]
 }

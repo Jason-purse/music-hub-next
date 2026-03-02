@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPluginById } from '@/lib/plugins-db'
 import { getDB } from '@/lib/db'
+import { checkPluginApiAccess } from '@/lib/plugin-api-guard'
 
 const VALID_ID = /^[a-z0-9_-]+$/i
 
 // GET /api/plugins/[id]/query/stats — 返回站点统计
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 访问控制检查
+  const denied = await checkPluginApiAccess(req)
+  if (denied) return denied
+
   const { id } = await params
 
   if (!VALID_ID.test(id)) {

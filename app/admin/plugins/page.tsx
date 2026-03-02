@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import type { PluginConfigField } from '@/types/plugin'
+import { PluginWCHost } from '@/components/PluginWCHost'
 
 interface PluginItem {
   id: string
@@ -14,6 +15,7 @@ interface PluginItem {
   builtin?: boolean
   defaultEnabled?: boolean
   config?: { schema: Record<string, PluginConfigField> }
+  configUI?: string
   userConfig: Record<string, unknown>
 }
 
@@ -68,12 +70,15 @@ export default function PluginsPage() {
 
   function openConfig(plugin: PluginItem) {
     setConfigPlugin(plugin)
-    const schema = plugin.config?.schema || {}
-    const initial: Record<string, unknown> = {}
-    for (const [key, field] of Object.entries(schema)) {
-      initial[key] = plugin.userConfig[key] ?? field.default
+    // 只在 schema 表单模式下初始化 configValues
+    if (!plugin.configUI) {
+      const schema = plugin.config?.schema || {}
+      const initial: Record<string, unknown> = {}
+      for (const [key, field] of Object.entries(schema)) {
+        initial[key] = plugin.userConfig[key] ?? field.default
+      }
+      setConfigValues(initial)
     }
-    setConfigValues(initial)
   }
 
   async function saveConfig() {
@@ -152,6 +157,12 @@ export default function PluginsPage() {
     )
   }
 
+  // 判断插件是否有配置能力（schema 表单或 configUI WC）
+  const hasConfig = (plugin: PluginItem) => {
+    if (plugin.configUI) return true
+    return plugin.config?.schema && Object.keys(plugin.config.schema).length > 0
+  }
+
   const TIER_LABELS: Record<string, string> = {
     core: '核心',
     builtin: '内置',
@@ -185,8 +196,8 @@ export default function PluginsPage() {
         )}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* config button */}
-        {plugin.config?.schema && Object.keys(plugin.config.schema).length > 0 && (
+        {/* config button — 支持 configUI 和 schema 两种模式 */}
+        {hasConfig(plugin) && (
           <button
             onClick={() => openConfig(plugin)}
             className="px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 rounded-lg transition"
@@ -289,25 +300,39 @@ export default function PluginsPage() {
               <button onClick={() => setConfigPlugin(null)} className="text-gray-400 hover:text-gray-600 text-xl">×</button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-4">
-              {Object.entries(configPlugin.config?.schema || {}).map(([key, field]) =>
-                renderField(key, field)
+              {/* configUI 模式：渲染插件自定义配置 WC */}
+              {configPlugin.configUI ? (
+                <PluginWCHost
+                  pluginId={configPlugin.id}
+                  tagName={configPlugin.configUI}
+                  scriptUrl={`/api/plugins/${configPlugin.id}/script`}
+                  config={configPlugin.userConfig}
+                />
+              ) : (
+                /* schema 表单模式 */
+                Object.entries(configPlugin.config?.schema || {}).map(([key, field]) =>
+                  renderField(key, field)
+                )
               )}
             </div>
-            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-2 justify-end">
-              <button
-                onClick={() => setConfigPlugin(null)}
-                className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
-              >
-                取消
-              </button>
-              <button
-                onClick={saveConfig}
-                disabled={saving}
-                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
-              >
-                {saving ? '保存中…' : '保存'}
-              </button>
-            </div>
+            {/* 只在 schema 表单模式下显示保存按钮；configUI 模式由 WC 自行处理 */}
+            {!configPlugin.configUI && (
+              <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-2 justify-end">
+                <button
+                  onClick={() => setConfigPlugin(null)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={saveConfig}
+                  disabled={saving}
+                  className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                >
+                  {saving ? '保存中…' : '保存'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

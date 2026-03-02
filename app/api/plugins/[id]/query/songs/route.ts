@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPluginById } from '@/lib/plugins-db'
 import { getSongs } from '@/lib/db'
+import { checkPluginApiAccess } from '@/lib/plugin-api-guard'
 
 const VALID_ID = /^[a-z0-9_-]+$/i
 
@@ -9,6 +10,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // 访问控制检查
+  const denied = await checkPluginApiAccess(req)
+  if (denied) return denied
+
   const { id } = await params
 
   if (!VALID_ID.test(id)) {

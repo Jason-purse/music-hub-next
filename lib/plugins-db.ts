@@ -130,6 +130,7 @@ function rowToPlugin(row: any): InstalledPlugin {
     slots: manifest.slots,
     apiPrefix: manifest.apiPrefix,
     pagePrefix: manifest.pagePrefix,
+    configUI: manifest.configUI,
     userConfig,
     installedAt: row.installed_at,
   }

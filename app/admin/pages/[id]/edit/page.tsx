@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import useSWR from 'swr'
 import {
   DragDropContext,
@@ -368,12 +369,45 @@ const BLOCK_CATEGORIES = [
   },
 ]
 
+interface PluginBlockItem {
+  type: string
+  label: string
+  icon: string
+  description?: string
+  category?: string
+  component: string
+  defaultProps?: Record<string, unknown>
+  pluginId: string
+  pluginName: string
+}
+
 function BlockLibrary() {
   const allPlugins = blockMetaRegistry.getAll()
-  // 内置分类里已列出的 block types
-  const builtinTypes = new Set(BLOCK_CATEGORIES.flatMap(c => c.types))
-  // 社区插件 = 注册了但不在内置分类里的
-  const communityPlugins = allPlugins.filter(p => !builtinTypes.has(p.type))
+  const [search, setSearch] = useState('')
+  const [pluginBlocks, setPluginBlocks] = useState<PluginBlockItem[]>([])
+  const [pluginBlocksLoading, setPluginBlocksLoading] = useState(true)
+
+  // 从 API 拉取扩展积木
+  useEffect(() => {
+    fetch('/api/plugins/blocks')
+      .then(r => r.json())
+      .then(data => setPluginBlocks(data.blocks ?? []))
+      .catch(() => setPluginBlocks([]))
+      .finally(() => setPluginBlocksLoading(false))
+  }, [])
+
+  const q = search.trim().toLowerCase()
+
+  // 按插件分组扩展积木
+  const pluginGroups = pluginBlocks.reduce<Record<string, { pluginName: string; blocks: PluginBlockItem[] }>>((acc, b) => {
+    if (q && !b.label.toLowerCase().includes(q) && !b.type.toLowerCase().includes(q)) return acc
+    if (!acc[b.pluginId]) acc[b.pluginId] = { pluginName: b.pluginName, blocks: [] }
+    acc[b.pluginId].blocks.push(b)
+    return acc
+  }, {})
+
+  // 全部可拖拽项的 flat 索引（内置 + 扩展）
+  let draggableIndex = 0
 
   return (
     <Droppable droppableId="palette" isDropDisabled={true} direction="vertical">
@@ -381,12 +415,32 @@ function BlockLibrary() {
         <div
           ref={provided.innerRef}
           {...provided.droppableProps}
-          className="flex-1 overflow-y-auto px-3 py-3 space-y-5"
+          className="flex-1 overflow-y-auto px-3 py-3 space-y-4"
         >
-          {/* ── 内置分类 ───────────────────────── */}
+          {/* ── 搜索框 ─────────────────────────── */}
+          <div className="relative">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="搜索积木…"
+              className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-indigo-300 focus:outline-none transition placeholder:text-gray-300"
+            />
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          {/* ── 内置积木 ──────────────────────── */}
+          <div className="mb-1 px-1">
+            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">内置积木</div>
+          </div>
           {BLOCK_CATEGORIES.map(cat => {
-            const metas = cat.types.map(t => blockMetaRegistry.get(t)).filter(Boolean) as BlockMeta[]
-            if (metas.length === 0) return null
+            const metas = cat.types
+              .map(t => blockMetaRegistry.get(t))
+              .filter(Boolean) as BlockMeta[]
+            const filtered = q ? metas.filter(m => m.label.toLowerCase().includes(q) || m.type.toLowerCase().includes(q)) : metas
+            if (filtered.length === 0) return null
             return (
               <div key={cat.label}>
                 <div className="mb-2 px-1">
@@ -394,13 +448,13 @@ function BlockLibrary() {
                   {'desc' in cat && <div className="text-[10px] text-gray-300 mt-0.5">{(cat as any).desc}</div>}
                 </div>
                 <div className="space-y-1.5">
-                  {metas.map((meta, index) => {
-                    const globalIndex = allPlugins.findIndex(p => p.type === meta.type)
+                  {filtered.map((meta) => {
+                    const idx = draggableIndex++
                     return (
                       <Draggable
                         key={`palette-${meta.type}`}
                         draggableId={`palette-${meta.type}`}
-                        index={globalIndex >= 0 ? globalIndex : index}
+                        index={idx}
                       >
                         {(provided, snapshot) => (
                           <>
@@ -435,53 +489,84 @@ function BlockLibrary() {
             )
           })}
 
-          {/* ── 社区插件（动态，安装后出现）───── */}
-          {communityPlugins.length > 0 && (
-            <div>
-              <div className="mb-2 px-1">
-                <div className="text-xs font-semibold text-gray-600">🧩 社区插件</div>
-                <div className="text-[10px] text-gray-300 mt-0.5">已安装的第三方积木</div>
-              </div>
-              <div className="space-y-1.5">
-                {communityPlugins.map((meta, index) => {
-                  const globalIndex = allPlugins.findIndex(p => p.type === meta.type)
-                  return (
-                    <Draggable
-                      key={`palette-${meta.type}`}
-                      draggableId={`palette-${meta.type}`}
-                      index={globalIndex >= 0 ? globalIndex : index + 100}
-                    >
-                      {(provided, snapshot) => (
-                        <>
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition select-none
-                              ${snapshot.isDragging
-                                ? 'opacity-60 border-purple-300 bg-purple-50'
-                                : 'border-purple-100 bg-white hover:border-purple-300 hover:bg-purple-50/50'
-                              }`}
-                          >
-                            <span className="text-xl shrink-0">{meta.icon}</span>
-                            <div className="min-w-0">
-                              <div className="text-sm font-medium text-gray-700 leading-tight">{meta.label}</div>
-                              <div className="text-[10px] text-purple-300">社区</div>
-                            </div>
-                          </div>
-                          {snapshot.isDragging && (
-                            <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-purple-100 bg-white opacity-30 select-none">
-                              <span className="text-xl shrink-0">{meta.icon}</span>
-                              <span className="text-sm font-medium text-gray-700">{meta.label}</span>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </Draggable>
-                  )
-                })}
-              </div>
+          {/* ── 扩展积木 ──────────────────────── */}
+          <div className="mt-2 mb-1 px-1">
+            <div className="text-[10px] font-semibold text-purple-500 uppercase tracking-wider">扩展积木</div>
+          </div>
+
+          {pluginBlocksLoading ? (
+            /* skeleton loading */
+            <div className="space-y-2">
+              {[1, 2].map(i => (
+                <div key={i} className="animate-pulse flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-purple-100">
+                  <div className="w-6 h-6 bg-purple-100 rounded" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-3 bg-purple-100 rounded w-2/3" />
+                    <div className="h-2 bg-purple-50 rounded w-1/3" />
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : Object.keys(pluginGroups).length > 0 ? (
+            /* 按插件分组显示 */
+            Object.entries(pluginGroups).map(([pluginId, group]) => (
+              <div key={pluginId}>
+                <div className="mb-2 px-1">
+                  <div className="text-xs font-semibold text-purple-600">🧩 {group.pluginName}</div>
+                </div>
+                <div className="space-y-1.5">
+                  {group.blocks.map((block) => {
+                    const idx = draggableIndex++
+                    return (
+                      <Draggable
+                        key={`palette-${block.type}`}
+                        draggableId={`palette-${block.type}`}
+                        index={idx}
+                      >
+                        {(provided, snapshot) => (
+                          <>
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition select-none
+                                ${snapshot.isDragging
+                                  ? 'opacity-60 border-purple-300 bg-purple-50'
+                                  : 'border-purple-200 bg-purple-50/30 hover:border-purple-300 hover:bg-purple-50/50'
+                                }`}
+                            >
+                              <span className="text-xl shrink-0">{block.icon}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-medium text-gray-700 leading-tight">{block.label}</div>
+                                <div className="text-[10px] text-purple-400">{group.pluginName}</div>
+                              </div>
+                            </div>
+                            {snapshot.isDragging && (
+                              <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl border border-purple-100 bg-white opacity-30 select-none">
+                                <span className="text-xl shrink-0">{block.icon}</span>
+                                <span className="text-sm font-medium text-gray-700">{block.label}</span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </Draggable>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
+          ) : !q ? (
+            /* 空态引导卡 */
+            <div className="border border-dashed border-purple-200 rounded-xl p-4 text-center">
+              <div className="text-2xl mb-2">🧩</div>
+              <div className="text-sm font-medium text-purple-600">从插件市场添加扩展积木</div>
+              <div className="text-xs text-gray-400 mt-1">安装插件后，插件提供的积木将出现在这里</div>
+              <Link href="/admin/plugins" className="mt-3 inline-block text-xs text-purple-500 hover:underline">
+                前往插件市场 →
+              </Link>
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400 text-center py-2">无匹配的扩展积木</div>
           )}
 
           {provided.placeholder}

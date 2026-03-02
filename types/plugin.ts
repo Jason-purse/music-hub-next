@@ -20,6 +20,7 @@ export interface PluginManifest {
   config?: {
     schema: Record<string, PluginConfigField>
   }
+  configUI?: string   // WC 标签名，若有则在 admin 插件配置页用它替代 schema 表单
   slots?: string[]
   apiPrefix?: string
   pagePrefix?: string

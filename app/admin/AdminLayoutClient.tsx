@@ -30,6 +30,7 @@ const CORE_NAV = [
       { icon: '🧩', label: '插件管理', href: '/admin/plugins' },
       { icon: '💾', label: '存储配置', href: '/admin/settings/storage' },
       { icon: '🔄', label: '数据迁移', href: '/admin/settings/migration' },
+      { icon: '🔌', label: 'API 管理', href: '/admin/settings/api' },
     ],
   },
   {

@@ -28,6 +28,16 @@ export interface PluginDataEndpoint {
   params?: Record<string, unknown>
 }
 
+export interface PluginBlockDecl {
+  type: string          // 积木类型 ID，如 "hello-stats-card"（全局唯一，建议 pluginId-xxx）
+  label: string         // 显示名称
+  icon: string          // emoji 图标
+  description?: string  // 简短说明
+  category?: string     // 分组（可选，显示在扩展积木区内的子分类）
+  component: string     // WC 标签名（用于在画布中渲染）
+  defaultProps?: Record<string, unknown>  // 默认 props
+}
+
 export interface PluginManifest {
   id: string
   name: string
@@ -38,6 +48,7 @@ export interface PluginManifest {
   slots?: PluginSlotDecl[]
   routes?: PluginRouteDecl[]
   adminMenu?: PluginAdminMenuDecl[]
+  blocks?: PluginBlockDecl[]
   script?: string
   configSchema?: Record<string, {
     type: 'string' | 'number' | 'boolean'

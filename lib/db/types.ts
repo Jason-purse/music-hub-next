@@ -55,6 +55,8 @@ export interface RankingChartConfig {
   limit: number;          // TOP N，管理端配置
 }
 
+export type PluginApiAccess = 'public' | 'same-origin' | 'disabled'
+
 export interface SiteSettings {
   rankings: {
     hot:      RankingChartConfig;   // 热播榜：play_count DESC
@@ -65,6 +67,7 @@ export interface SiteSettings {
       limitPerDecade: number;       // 每个年代 TOP N
     };
   };
+  pluginApiAccess?: PluginApiAccess; // 插件 API 访问级别，默认 same-origin
 }
 
 export const DEFAULT_SETTINGS: SiteSettings = {

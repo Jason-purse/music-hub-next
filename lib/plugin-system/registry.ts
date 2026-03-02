@@ -1,5 +1,5 @@
 import { getAllPluginsRaw } from '../plugins-db'
-import type { PluginManifest, PluginSlotDecl, PluginAdminMenuDecl } from './types'
+import type { PluginManifest, PluginSlotDecl, PluginAdminMenuDecl, PluginBlockDecl } from './types'
 
 export interface EnabledPlugin {
   id: string
@@ -36,6 +36,16 @@ export function getPluginAdminMenuItems(): { plugin: EnabledPlugin; item: Plugin
   for (const plugin of getEnabledPlugins()) {
     for (const item of plugin.manifest.adminMenu ?? []) {
       result.push({ plugin, item })
+    }
+  }
+  return result
+}
+
+export function getPluginBlocks(): Array<PluginBlockDecl & { pluginId: string; pluginName: string }> {
+  const result: Array<PluginBlockDecl & { pluginId: string; pluginName: string }> = []
+  for (const plugin of getEnabledPlugins()) {
+    for (const block of plugin.manifest.blocks ?? []) {
+      result.push({ ...block, pluginId: plugin.id, pluginName: plugin.manifest.name })
     }
   }
   return result
