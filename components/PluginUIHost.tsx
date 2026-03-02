@@ -26,7 +26,7 @@ export function PluginUIHost({ enabledPlugins }: Props) {
       )}
       {isEnabled('back-to-top') && (
         <BackToTop
-          threshold={(getConfig('back-to-top').threshold as number) ?? 300}
+          threshold={(getConfig('back-to-top').threshold as number) ?? 0}
         />
       )}
     </>

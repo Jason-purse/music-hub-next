@@ -49,7 +49,7 @@ const BUILTIN_MANIFESTS: PluginManifest[] = [
         threshold: {
           type: 'number',
           label: '触发滚动距离 (px)',
-          default: 300,
+          default: 0,
           description: '滚动超过此距离后按钮出现',
         },
       },
