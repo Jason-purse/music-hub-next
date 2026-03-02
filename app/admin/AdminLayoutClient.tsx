@@ -72,7 +72,12 @@ function Sidebar({
 
   function isActive(href: string) {
     if (href === '/admin') return pathname === '/admin'
-    return pathname.startsWith(href)
+    // /admin/pages 不能匹配 /admin/pages/built-in（内置页面是独立路由）
+    if (href === '/admin/pages') {
+      return pathname === '/admin/pages' ||
+        (pathname.startsWith('/admin/pages/') && !pathname.startsWith('/admin/pages/built-in'))
+    }
+    return pathname === href || pathname.startsWith(href + '/')
   }
 
   return (
