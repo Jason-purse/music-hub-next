@@ -26,6 +26,7 @@ const navSections = [
   {
     title: '系统设置',
     items: [
+      { icon: '🧩', label: '插件管理', href: '/admin/plugins' },
       { icon: '🏆', label: '榜单配置', href: '/admin/settings/rankings' },
       { icon: '💾', label: '存储配置', href: '/admin/settings/storage' },
       { icon: '🔄', label: '数据迁移', href: '/admin/settings/migration' },
@@ -36,24 +37,93 @@ const navSections = [
   },
 ]
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname()
+
+  function isActive(href: string) {
+    if (href === '/admin') return pathname === '/admin'
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <aside className="w-56 h-full bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+      {/* Logo */}
+      <div className="px-4 py-5 border-b border-gray-50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🎶</span>
+          <div>
+            <div className="font-bold text-gray-800 text-sm leading-tight">MusicHub</div>
+            <div className="text-[10px] text-gray-400 leading-tight">管理后台</div>
+          </div>
+        </div>
+        {/* 移动端关闭按钮 */}
+        {onClose && (
+          <button onClick={onClose} className="md:hidden p-1 text-gray-400 hover:text-gray-600">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* 导航 */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {navSections.map((section, si) => (
+          <div key={si}>
+            {section.title && (
+              <div className="text-[10px] uppercase tracking-widest text-gray-300 font-semibold px-3 mb-1">
+                {section.title}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              {section.items.map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition ${
+                    isActive(item.href)
+                      ? 'bg-indigo-50 text-indigo-600 font-medium'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <span>{item.icon}</span>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      </nav>
+
+      {/* 底部返回 */}
+      <div className="px-3 py-4 border-t border-gray-50">
+        <Link
+          href="/"
+          onClick={onClose}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+        >
+          <span>←</span>
+          <span>返回前台</span>
+        </Link>
+      </div>
+    </aside>
+  )
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState('')
   const [mounted, setMounted] = useState(false)
   const [password, setPassword] = useState('')
   const [loginErr, setLoginErr] = useState('')
   const [logging, setLogging] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     const t = localStorage.getItem('admin_token') || ''
     setToken(t)
     setMounted(true)
   }, [])
-
-  function isActive(href: string) {
-    if (href === '/admin') return pathname === '/admin'
-    return pathname.startsWith(href)
-  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -84,64 +154,53 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminTokenContext.Provider value={token}>
       <div className="flex h-screen overflow-hidden">
-        {/* 左侧侧边栏 */}
-        <aside className="w-56 shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
-          {/* Logo 区域 */}
-          <div className="px-4 py-5 border-b border-gray-50">
+
+        {/* 桌面端固定侧边栏 */}
+        <div className="hidden md:flex shrink-0">
+          <Sidebar />
+        </div>
+
+        {/* 移动端抽屉遮罩 */}
+        {drawerOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            onClick={() => setDrawerOpen(false)}
+          />
+        )}
+
+        {/* 移动端抽屉侧边栏 */}
+        <div className={`
+          fixed inset-y-0 left-0 z-50 md:hidden flex
+          transform transition-transform duration-250
+          ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Sidebar onClose={() => setDrawerOpen(false)} />
+        </div>
+
+        {/* 右侧内容区 */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col min-w-0">
+
+          {/* 移动端顶部栏 */}
+          <div className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 shrink-0">
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
+              aria-label="打开菜单"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
             <div className="flex items-center gap-2">
-              <span className="text-xl">🎶</span>
-              <div>
-                <div className="font-bold text-gray-800 text-sm leading-tight">MusicHub</div>
-                <div className="text-[10px] text-gray-400 leading-tight">管理后台</div>
-              </div>
+              <span>🎶</span>
+              <span className="font-semibold text-gray-800 text-sm">MusicHub 管理后台</span>
             </div>
           </div>
 
-          {/* 导航区域 */}
-          <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
-            {navSections.map((section, si) => (
-              <div key={si}>
-                {section.title && (
-                  <div className="text-[10px] uppercase tracking-widest text-gray-300 font-semibold px-3 mb-1">
-                    {section.title}
-                  </div>
-                )}
-                <div className="space-y-0.5">
-                  {section.items.map(item => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition ${
-                        isActive(item.href)
-                          ? 'bg-indigo-50 text-indigo-600 font-medium'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <span>{item.icon}</span>
-                      <span>{item.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
-
-          {/* 底部返回链接 */}
-          <div className="px-3 py-4 border-t border-gray-50">
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
-            >
-              <span>←</span>
-              <span>返回前台</span>
-            </Link>
-          </div>
-        </aside>
-
-        {/* 右侧内容区 */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
           {!token ? (
-            <div className="flex items-center justify-center min-h-full p-8">
+            <div className="flex items-center justify-center flex-1 p-6">
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full max-w-sm space-y-5">
                 <div className="text-center">
                   <div className="text-3xl mb-2">🔐</div>
