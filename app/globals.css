@@ -197,3 +197,28 @@ html.eye-care input[type="search"] {
   color: #3a2e1e !important;
   border-color: #d5c9b0 !important;
 }
+
+/* ── NavDock 插件：主内容区跟随 dock 位置留出空间 ──────── */
+/* WC 启动后写 CSS 变量 + data-dock-position，SSR 端靠 data-attr */
+:root {
+  --dock-bottom-space: 0px;
+  --dock-left-space:   0px;
+  --dock-right-space:  0px;
+  --dock-top-space:    0px;
+}
+[data-dock-position="bottom"] { --dock-bottom-space: 72px; }
+[data-dock-position="left"]   { --dock-left-space:   72px; }
+[data-dock-position="right"]  { --dock-right-space:  72px; }
+[data-dock-position="top"]    { --dock-top-space:    72px; }
+
+/* WC 运行时直接写 var，两套都处理防闪烁 */
+main {
+  padding-bottom: max(7rem, calc(4rem + var(--dock-bottom-space)));
+  padding-left:   calc(1rem + var(--dock-left-space));
+  padding-right:  calc(1rem + var(--dock-right-space));
+  padding-top:    var(--dock-top-space, 0px);
+}
+@keyframes nav-dock-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.15); opacity: 0.8; }
+}

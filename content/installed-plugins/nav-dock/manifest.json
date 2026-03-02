@@ -1,0 +1,45 @@
+{
+  "id": "nav-dock",
+  "name": "NavDock 导航坞",
+  "version": "1.0.0",
+  "tier": "standard",
+  "description": "macOS Dock 风格全站导航，支持四向切换。安装后提供：全局悬浮导航坞 + 迷你导航坞积木 + 面包屑积木。",
+  "author": "MusicHub Team",
+  "script": "webcomponent/index.js",
+  "slots": [
+    { "name": "site-overlay", "component": "nav-dock-main" }
+  ],
+  "blocks": [
+    {
+      "type": "nav-dock-mini",
+      "label": "迷你导航坞",
+      "icon": "⚓",
+      "description": "可嵌入页面内容区的迷你水平导航栏",
+      "category": "navigation",
+      "component": "nav-dock-mini",
+      "defaultProps": { "size": "md" }
+    },
+    {
+      "type": "nav-breadcrumb",
+      "label": "面包屑导航",
+      "icon": "🗺️",
+      "description": "显示当前页面层级路径，帮助用户快速定位",
+      "category": "navigation",
+      "component": "nav-breadcrumb-wc",
+      "defaultProps": {}
+    }
+  ],
+  "configSchema": {
+    "position": {
+      "type": "string",
+      "label": "默认位置",
+      "default": "bottom",
+      "description": "bottom / left / right / top"
+    },
+    "autohide": {
+      "type": "boolean",
+      "label": "移动端自动隐藏",
+      "default": true
+    }
+  }
+}

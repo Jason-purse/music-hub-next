@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import Navbar from '@/components/Navbar';
 import Player from '@/components/Player';
 import DisclaimerModal from '@/components/DisclaimerModal';
@@ -7,20 +8,21 @@ import { getAllPlugins } from '@/lib/plugins-db';
 import { seedBuiltinPlugins } from '@/lib/plugins/seed';
 import Link from 'next/link';
 
-const UI_PLUGIN_IDS = ['back-to-top', 'reading-progress']
-
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-  // 确保内置插件已种入
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
   try { seedBuiltinPlugins() } catch {}
 
-  // 读取已启用的 UI 插件状态
+  const UI_PLUGIN_IDS = ['back-to-top', 'reading-progress']
   const allPlugins = getAllPlugins()
   const enabledUIPlugins = allPlugins
     .filter(p => UI_PLUGIN_IDS.includes(p.id) && p.enabled)
     .map(p => ({ id: p.id, userConfig: p.userConfig }))
 
+  // 读取 dock 位置 cookie（SSR 防闪）
+  const cookieStore = await cookies();
+  const dockPos = cookieStore.get('nav-dock-position')?.value ?? 'bottom';
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col" data-dock-position={dockPos}>
       <Navbar />
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 pt-16 md:pt-20 pb-28 md:pb-32 page-enter">
         {children}
@@ -35,6 +37,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <Player />
       <DisclaimerModal />
       <PluginUIHost enabledPlugins={enabledUIPlugins} />
+      {/* site-overlay 槽：nav-dock 等全局叠加层插件通过此槽注入 */}
+      <PluginSlot name="site-overlay" />
     </div>
   );
 }
