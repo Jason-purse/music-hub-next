@@ -21,13 +21,13 @@ const CORE_NAV = [
     items: [
       { icon: '🏠', label: '内置页面', href: '/admin/pages/built-in' },
       { icon: '🎨', label: '自定义页面', href: '/admin/pages' },
+      { icon: '🏆', label: '榜单配置', href: '/admin/settings/rankings' },
     ],
   },
   {
     title: '系统设置',
     items: [
       { icon: '🧩', label: '插件管理', href: '/admin/plugins' },
-      { icon: '🏆', label: '榜单配置', href: '/admin/settings/rankings' },
       { icon: '💾', label: '存储配置', href: '/admin/settings/storage' },
       { icon: '🔄', label: '数据迁移', href: '/admin/settings/migration' },
     ],

@@ -22,6 +22,12 @@ export interface PluginAdminMenuDecl {
   component: string   // WC 标签名
 }
 
+export interface PluginDataEndpoint {
+  path: string        // 相对路径，如 "/my-data"
+  query: 'songs' | 'playlists' | 'stats' | 'data'
+  params?: Record<string, unknown>
+}
+
 export interface PluginManifest {
   id: string
   name: string
@@ -39,4 +45,6 @@ export interface PluginManifest {
     default?: unknown
     description?: string
   }>
+  configUI?: string   // WC 标签名，若有则在 admin 插件配置页用它替代 schema 表单
+  dataEndpoints?: PluginDataEndpoint[]
 }

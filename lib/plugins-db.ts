@@ -29,6 +29,15 @@ function getDb(): Database.Database {
       installed_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `)
+  _db.exec(`
+    CREATE TABLE IF NOT EXISTS plugin_data (
+      plugin_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      PRIMARY KEY (plugin_id, key)
+    );
+  `)
   return _db
 }
 
@@ -146,4 +155,32 @@ export function getAllPluginsRaw(): { id: string; enabled: boolean; userConfig: 
     userConfig: (() => { try { return JSON.parse(r.config || '{}') } catch { return {} } })(),
     manifest: (() => { try { return JSON.parse(r.manifest || '{}') } catch { return {} } })(),
   }))
+}
+
+// ── Plugin Data Store ────────────────────────────────────────────────────────
+
+/** 获取插件的全部数据 key-value pairs */
+export function getPluginData(pluginId: string): Record<string, string> {
+  const db = getDb()
+  const rows = db.prepare('SELECT key, value FROM plugin_data WHERE plugin_id = ?').all(pluginId) as { key: string; value: string }[]
+  const result: Record<string, string> = {}
+  for (const row of rows) {
+    result[row.key] = row.value
+  }
+  return result
+}
+
+/** 写入或更新插件数据 */
+export function setPluginData(pluginId: string, key: string, value: string): void {
+  const db = getDb()
+  db.prepare(
+    'INSERT OR REPLACE INTO plugin_data (plugin_id, key, value, updated_at) VALUES (?, ?, ?, ?)'
+  ).run(pluginId, key, value, Date.now())
+}
+
+/** 删除插件数据的某个 key */
+export function deletePluginData(pluginId: string, key: string): boolean {
+  const db = getDb()
+  const result = db.prepare('DELETE FROM plugin_data WHERE plugin_id = ? AND key = ?').run(pluginId, key)
+  return result.changes > 0
 }
