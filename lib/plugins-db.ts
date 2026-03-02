@@ -125,3 +125,25 @@ function rowToPlugin(row: any): InstalledPlugin {
     installedAt: row.installed_at,
   }
 }
+
+/** 获取插件的原始 manifest JSON（包含系统扩展字段）*/
+export function getPluginRawManifest(id: string): Record<string, unknown> | null {
+  const db = getDb()
+  const row = db.prepare('SELECT manifest FROM plugins WHERE id = ?').get(id) as { manifest: string } | undefined
+  if (!row) return null
+  try { return JSON.parse(row.manifest || '{}') } catch { return null }
+}
+
+/** 获取所有插件的原始 manifest（用于系统级路由/slot 查询）*/
+export function getAllPluginsRaw(): { id: string; enabled: boolean; userConfig: Record<string, unknown>; manifest: Record<string, unknown> }[] {
+  const db = getDb()
+  const rows = db.prepare('SELECT id, enabled, config, manifest FROM plugins').all() as {
+    id: string; enabled: number; config: string; manifest: string
+  }[]
+  return rows.map(r => ({
+    id: r.id,
+    enabled: !!r.enabled,
+    userConfig: (() => { try { return JSON.parse(r.config || '{}') } catch { return {} } })(),
+    manifest: (() => { try { return JSON.parse(r.manifest || '{}') } catch { return {} } })(),
+  }))
+}
