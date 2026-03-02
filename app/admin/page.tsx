@@ -3,11 +3,20 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAdminToken } from './context'
 
+interface EnvInfo {
+  nodeEnv: string
+  isVercel: boolean
+  hasGitHubToken: boolean
+  pluginStorageMode: string
+  installedPlugins: number
+}
+
 export default function AdminPage() {
   const token = useAdminToken()
   const [stats, setStats] = useState<any>(null)
   const [pageCount, setPageCount] = useState<number | null>(null)
   const [playlistCount, setPlaylistCount] = useState<number | null>(null)
+  const [envInfo, setEnvInfo] = useState<EnvInfo | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -23,6 +32,10 @@ export default function AdminPage() {
     fetch('/api/playlists', { headers: { 'x-admin-token': token } })
       .then(r => r.json())
       .then(d => setPlaylistCount(Array.isArray(d.playlists ?? d) ? (d.playlists ?? d).length : 0))
+    // 环境信息
+    fetch('/api/env')
+      .then(r => r.json())
+      .then(d => setEnvInfo(d))
   }, [token])
 
   return (
@@ -46,6 +59,35 @@ export default function AdminPage() {
             <div className="text-sm text-gray-500 mt-1">{item.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* 运行环境卡片 */}
+      <div className="mb-8">
+        <div className="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            🖥 运行环境
+          </h3>
+          {envInfo ? (
+            <div className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+              <div className="text-gray-500">环境</div>
+              <div className="text-gray-800 font-medium">
+                {envInfo.isVercel ? '生产环境 (Vercel)' : envInfo.nodeEnv === 'production' ? '生产环境' : '本地开发'}
+              </div>
+
+              <div className="text-gray-500">插件存储</div>
+              <div className="text-gray-800 font-medium">
+                {envInfo.pluginStorageMode === 'github' ? 'GitHub API ☁️' : '本地文件系统 📁'}
+              </div>
+
+              <div className="text-gray-500">已安装插件</div>
+              <div className="text-gray-800 font-medium">
+                {envInfo.installedPlugins} 个
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-gray-400">加载中…</div>
+          )}
+        </div>
       </div>
 
       {/* 快捷入口 */}

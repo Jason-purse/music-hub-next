@@ -5,7 +5,25 @@ import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AdminTokenContext } from './context'
 
-const CORE_NAV = [
+interface NavChild {
+  icon: string
+  label: string
+  href: string
+}
+
+interface NavItem {
+  icon: string
+  label: string
+  href: string
+  children?: NavChild[]
+}
+
+interface NavSection {
+  title?: string
+  items: NavItem[]
+}
+
+const CORE_NAV: NavSection[] = [
   {
     items: [{ icon: '📊', label: '概览', href: '/admin' }],
   },
@@ -19,9 +37,13 @@ const CORE_NAV = [
   {
     title: '模块',
     items: [
-      { icon: '🏠', label: '内置模块', href: '/admin/pages/built-in' },
+      {
+        icon: '🏠', label: '内置模块', href: '/admin/pages/built-in',
+        children: [
+          { icon: '🏆', label: '榜单配置', href: '/admin/settings/rankings' },
+        ],
+      },
       { icon: '🎨', label: '自定义模块', href: '/admin/pages' },
-      { icon: '🏆', label: '榜单配置', href: '/admin/settings/rankings' },
     ],
   },
   {
@@ -64,12 +86,35 @@ function buildNavSections(pluginMenuItems: PluginMenuItem[]) {
 function Sidebar({
   pluginMenuItems,
   onClose,
+  collapsed,
+  onToggleCollapse,
 }: {
   pluginMenuItems: PluginMenuItem[]
   onClose?: () => void
+  collapsed?: boolean
+  onToggleCollapse?: () => void
 }) {
   const pathname = usePathname()
   const navSections = buildNavSections(pluginMenuItems)
+  const isCollapsed = collapsed ?? false
+
+  // Compute initial expanded state: auto-expand parent if current path matches a child
+  const computeInitialExpanded = (): Record<string, boolean> => {
+    const initial: Record<string, boolean> = {}
+    for (const section of navSections) {
+      for (const item of section.items) {
+        if (item.children) {
+          const childActive = item.children.some(
+            c => pathname === c.href || pathname.startsWith(c.href + '/')
+          )
+          if (childActive) initial[item.href] = true
+        }
+      }
+    }
+    return initial
+  }
+
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(computeInitialExpanded)
 
   function isActive(href: string) {
     if (href === '/admin') return pathname === '/admin'
@@ -80,62 +125,143 @@ function Sidebar({
     return pathname === href || pathname.startsWith(href + '/')
   }
 
+  function toggleExpanded(href: string) {
+    setExpanded(prev => ({ ...prev, [href]: !prev[href] }))
+  }
+
+  const linkClass = (active: boolean, collapsedMode: boolean) =>
+    `flex items-center ${collapsedMode ? 'justify-center px-0' : 'gap-3 px-3'} py-2 text-sm rounded-lg transition ${
+      active
+        ? 'bg-indigo-50 dark:bg-[var(--music-accent-light)] text-indigo-600 dark:text-[var(--music-accent)] font-medium'
+        : 'text-gray-600 dark:text-[var(--music-text-muted)] hover:bg-gray-100 dark:hover:bg-[var(--music-surface-hover)]'
+    }`
+
   return (
-    <aside className="w-56 h-full bg-white dark:bg-[var(--music-surface)] border-r border-gray-100 dark:border-[var(--music-border)] flex flex-col overflow-hidden">
-      <div className="px-4 py-5 border-b border-gray-50 dark:border-[var(--music-border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-xl">🎶</span>
-          <div>
-            <div className="font-bold text-gray-800 dark:text-[var(--music-text)] text-sm leading-tight">MusicHub</div>
-            <div className="text-[10px] text-gray-400 dark:text-[var(--music-text-subtle)] leading-tight">管理后台</div>
-          </div>
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="md:hidden p-1 text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)]">
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+    <aside className={`${isCollapsed ? 'w-14' : 'w-56'} transition-[width] duration-200 ease-in-out h-full bg-white dark:bg-[var(--music-surface)] border-r border-gray-100 dark:border-[var(--music-border)] flex flex-col overflow-hidden`}>
+      {/* Logo 区 */}
+      <div className={`px-4 py-5 border-b border-gray-50 dark:border-[var(--music-border)] flex items-center ${isCollapsed ? 'justify-center gap-1' : 'justify-between'}`}>
+        {isCollapsed ? (
+          <>
+            <span className="text-xl">🎶</span>
+            {/* 桌面端折叠按钮（折叠态） */}
+            {onToggleCollapse && (
+              <button
+                onClick={onToggleCollapse}
+                title="展开侧边栏"
+                className="hidden md:flex items-center justify-center w-6 h-6 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </button>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🎶</span>
+              <div>
+                <div className="font-bold text-gray-800 dark:text-[var(--music-text)] text-sm leading-tight">MusicHub</div>
+                <div className="text-[10px] text-gray-400 dark:text-[var(--music-text-subtle)] leading-tight">管理后台</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* 桌面端折叠按钮，移动端不显示 */}
+              {onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  title="折叠侧边栏"
+                  className="hidden md:flex items-center justify-center w-6 h-6 rounded text-gray-300 hover:text-gray-500 hover:bg-gray-100 transition"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+              )}
+              {onClose && (
+                <button onClick={onClose} className="md:hidden p-1 text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)]">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </>
         )}
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {navSections.map((section, si) => (
           <div key={si}>
-            {'title' in section && section.title && (
+            {!isCollapsed && 'title' in section && section.title && (
               <div className="text-[10px] uppercase tracking-widest text-gray-300 dark:text-[var(--music-text-subtle)] font-semibold px-3 mb-1">
                 {section.title}
               </div>
             )}
             <div className="space-y-0.5">
-              {section.items.map(item => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className={`flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition ${
-                    isActive(item.href)
-                      ? 'bg-indigo-50 dark:bg-[var(--music-accent-light)] text-indigo-600 dark:text-[var(--music-accent)] font-medium'
-                      : 'text-gray-600 dark:text-[var(--music-text-muted)] hover:bg-gray-100 dark:hover:bg-[var(--music-surface-hover)]'
-                  }`}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+              {section.items.map(item => {
+                const hasChildren = !!(item.children && item.children.length > 0)
+                const isOpen = !!expanded[item.href]
+
+                return (
+                  <div key={item.href}>
+                    {/* Parent item */}
+                    <Link
+                      href={item.href}
+                      title={isCollapsed ? item.label : undefined}
+                      onClick={() => {
+                        if (!isCollapsed && hasChildren) toggleExpanded(item.href)
+                        else onClose?.()
+                      }}
+                      className={linkClass(isActive(item.href), isCollapsed)}
+                    >
+                      <span>{item.icon}</span>
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1">{item.label}</span>
+                          {hasChildren && (
+                            <span className="text-xs text-gray-400 dark:text-[var(--music-text-subtle)]">
+                              {isOpen ? '▾' : '▸'}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+
+                    {/* Children — only in expanded mode */}
+                    {!isCollapsed && hasChildren && isOpen && (
+                      <div className="mt-0.5 ml-3 pl-3 border-l-2 border-gray-100 dark:border-[var(--music-border)] space-y-0.5">
+                        {item.children!.map(child => (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={onClose}
+                            className={linkClass(isActive(child.href), false)}
+                          >
+                            <span>{child.icon}</span>
+                            <span>{child.label}</span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-gray-50 dark:border-[var(--music-border)]">
+      <div className="px-3 py-4 border-t border-gray-50 dark:border-[var(--music-border)] space-y-1">
+        {/* 返回前台 */}
         <Link
           href="/"
           onClick={onClose}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)] hover:bg-gray-100 dark:hover:bg-[var(--music-surface-hover)] rounded-lg transition"
+          title={isCollapsed ? '返回前台' : undefined}
+          className={`flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-2 px-3'} py-2 text-sm text-gray-400 dark:text-[var(--music-text-subtle)] hover:text-gray-600 dark:hover:text-[var(--music-text-muted)] hover:bg-gray-100 dark:hover:bg-[var(--music-surface-hover)] rounded-lg transition`}
         >
           <span>←</span>
-          <span>返回前台</span>
+          {!isCollapsed && <span>返回前台</span>}
         </Link>
       </div>
     </aside>
@@ -149,12 +275,21 @@ export function AdminLayoutClient({ children, pluginMenuItems = [] }: Props) {
   const [loginErr, setLoginErr] = useState('')
   const [logging, setLogging] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
     const t = localStorage.getItem('admin_token') || ''
     setToken(t)
+    const saved = localStorage.getItem('admin-sidebar-collapsed')
+    if (saved === 'true') setCollapsed(true)
     setMounted(true)
   }, [])
+
+  function toggleCollapse() {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('admin-sidebar-collapsed', String(next))
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -187,7 +322,11 @@ export function AdminLayoutClient({ children, pluginMenuItems = [] }: Props) {
       <div className="flex h-screen overflow-hidden bg-[var(--music-bg)] text-[var(--music-text)]">
         {/* 桌面端固定侧边栏 */}
         <div className="hidden md:flex shrink-0">
-          <Sidebar pluginMenuItems={pluginMenuItems} />
+          <Sidebar
+            pluginMenuItems={pluginMenuItems}
+            collapsed={collapsed}
+            onToggleCollapse={toggleCollapse}
+          />
         </div>
 
         {/* 移动端遮罩 */}
@@ -198,7 +337,7 @@ export function AdminLayoutClient({ children, pluginMenuItems = [] }: Props) {
           />
         )}
 
-        {/* 移动端抽屉 */}
+        {/* 移动端抽屉 — 始终展开，不传 collapsed */}
         <div className={`
           fixed inset-y-0 left-0 z-50 md:hidden flex
           transform transition-transform duration-250

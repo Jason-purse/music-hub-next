@@ -505,7 +505,7 @@ function BlockLibrary() {
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition select-none text-center relative
+            className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border cursor-grab active:cursor-grabbing transition select-none text-center relative [&:last-child:nth-child(odd)]:col-span-2
               ${snapshot.isDragging
                 ? 'opacity-60 border-indigo-300 bg-indigo-50'
                 : block.isPlugin
@@ -521,7 +521,7 @@ function BlockLibrary() {
           </div>
           {/* drag clone 占位 */}
           {snapshot.isDragging && (
-            <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 bg-white opacity-30 select-none text-center">
+            <div className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 bg-white opacity-30 select-none text-center [&:last-child:nth-child(odd)]:col-span-2">
               <span className="text-2xl">{block.icon}</span>
               <div className="text-xs font-medium text-gray-700">{block.label}</div>
             </div>
@@ -649,13 +649,13 @@ function BlockLibrary() {
           </div>
 
           {/* 标签过滤条（横向滚动） */}
-          <div className="px-3 pt-2 pb-1 shrink-0">
-            <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <div className="px-3 pt-2 pb-0.5 shrink-0 min-w-0">
+            <div className="flex flex-wrap gap-1.5 pb-0.5">
               {availableTags.map(tag => (
                 <button
                   key={tag}
                   onClick={() => setActiveTag(tag)}
-                  className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium transition whitespace-nowrap
+                  className={`shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full text-xs font-medium transition
                     ${activeTag === tag
                       ? 'bg-indigo-500 text-white'
                       : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -815,6 +815,40 @@ function CanvasSlot({
   )
 }
 
+
+// ─── 三端并排预览 ─────────────────────────────────────────────────────────────
+
+const DEVICE_CONFIGS = [
+  { label: '🖥 桌面', width: 1280, scale: 0.45 },
+  { label: '📱 平板', width: 768,  scale: 0.55 },
+  { label: '📱 手机', width: 390,  scale: 0.75 },
+]
+
+function MultiDevicePreview({ pageSlug }: { pageSlug: string }) {
+  return (
+    <div className="flex gap-3 h-full overflow-x-auto px-4 py-3 bg-gray-100">
+      {DEVICE_CONFIGS.map(({ label, width, scale }) => (
+        <div key={width} className="flex-1 min-w-0 flex flex-col">
+          <div className="text-xs text-gray-400 mb-2 text-center">{label} · {width}px</div>
+          <div className="flex-1 relative overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm">
+            <iframe
+              src={`/pages/${pageSlug}?preview=1`}
+              style={{
+                width: `${width}px`,
+                height: '100%',
+                border: 'none',
+                transform: `scale(${scale})`,
+                transformOrigin: 'top left',
+              }}
+              title={`${label} 预览`}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ─── 画布容器 ────────────────────────────────────────────────────────────────
 
 function CanvasArea({
@@ -828,7 +862,7 @@ function CanvasArea({
   selectedId: string | null
   onSelect: (id: string) => void
   onDelete: (slotName: string, id: string) => void
-  device: 'desktop' | 'tablet' | 'mobile'
+  device: 'desktop' | 'tablet' | 'mobile' | 'multi'
 }) {
   const ALL_LAYOUT_OPTIONS = [...LAYOUT_OPTIONS, ...COMMUNITY_LAYOUT_OPTIONS]
   const currentLayout = ALL_LAYOUT_OPTIONS.find(l => l.value === page.layout) || LAYOUT_OPTIONS[0]
@@ -881,7 +915,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [saveMsg, setSaveMsg] = useState('')
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop')
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile' | 'multi'>('desktop')
 
   // ── 草稿自动保存状态 ──────────────────────────────────────────────────────
   const [draftSaving, setDraftSaving] = useState(false)
@@ -1202,6 +1236,13 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                 {d.icon}
               </button>
             ))}
+            <button
+              onClick={() => setDevice('multi')}
+              title="三端并排预览"
+              className={`px-2 py-1 text-sm rounded transition ${device === 'multi' ? 'bg-white shadow text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              ⊞
+            </button>
           </div>
 
           {/* 草稿状态 */}
@@ -1243,7 +1284,7 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
 
           {/* 左栏：积木库 — defaultSize 必须用字符串表示百分比 */}
           <Panel defaultSize="18%" minSize="160px" maxSize="320px">
-            <div className="h-full flex flex-col bg-white border-r border-gray-200 overflow-hidden">
+            <div className="h-full flex flex-col bg-white border-r border-gray-200 overflow-y-hidden">
               <div className="px-4 py-3 border-b border-gray-100 shrink-0">
                 <div className="text-sm font-semibold text-gray-700">积木库</div>
                 <div className="text-xs text-gray-400 mt-0.5">拖动积木到画布</div>
@@ -1263,15 +1304,24 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                   className="text-xs text-indigo-500 hover:text-indigo-700 px-2 py-1 rounded hover:bg-indigo-50 transition">
                   在新标签打开 ↗
                 </a>
+                <span className="text-xs text-gray-400">
+                  {device === 'desktop' ? '🖥 1280px' : device === 'tablet' ? '📱 768px' : device === 'mobile' ? '📲 390px' : '🔲 多端'}
+                </span>
               </div>
-              <div className="flex-1 overflow-y-auto p-6">
-                <CanvasArea
-                  page={page}
-                  selectedId={selectedId}
-                  onSelect={id => setSelectedId(id)}
-                  onDelete={(slot, id) => deleteBlock(slot, id)}
-                  device={device}
-                />
+              <div className="flex-1 overflow-hidden">
+                {device === 'multi' ? (
+                  <MultiDevicePreview pageSlug={page.slug} />
+                ) : (
+                  <div className="h-full overflow-y-auto p-6">
+                    <CanvasArea
+                      page={page}
+                      selectedId={selectedId}
+                      onSelect={id => setSelectedId(id)}
+                      onDelete={(slot, id) => deleteBlock(slot, id)}
+                      device={device}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </Panel>
@@ -1386,19 +1436,26 @@ export default function PageEditorPage({ params }: { params: { id: string } }) {
                           onClick={() => setPreviewFit('scale')}
                           title="缩放适配：以 1200px 全宽渲染后等比缩小，所见即桌面效果"
                           className={`px-2 py-0.5 rounded-md text-xs transition ${previewFit === 'scale' ? 'bg-white text-gray-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                        >缩放</button>
+                        >适配</button>
                       </div>
                     </div>
                     {/* 容器 ref 供 ResizeObserver 监听；overflow-hidden 防止 scale 模式溢出 */}
                     <div ref={previewContainerRef} className="flex-1 overflow-hidden relative bg-gray-50">
-                      <iframe
-                        ref={iframeRef}
-                        key={previewKey}
-                        src={`/pages/${page.slug}?preview=1`}
-                        className="border-0 bg-white"
-                        style={{ width: '100%', height: '100%' }}
-                        title="实时预览"
-                      />
+                      {page?.slug?.trim() ? (
+                        <iframe
+                          ref={iframeRef}
+                          key={previewKey}
+                          src={`/pages/${page.slug}?preview=1`}
+                          className="border-0 bg-white"
+                          style={{ width: '100%', height: '100%' }}
+                          title="实时预览"
+                        />
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-300 h-full">
+                          <span className="text-4xl">📄</span>
+                          <p className="text-sm">设置 URL Slug 后可在此预览页面</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Panel>
