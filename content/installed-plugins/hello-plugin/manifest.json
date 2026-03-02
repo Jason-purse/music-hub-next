@@ -1,0 +1,14 @@
+{
+  "id": "hello-plugin",
+  "name": "Hello Plugin",
+  "version": "1.0.0",
+  "description": "插件系统示例：验证 Slot 注入 + 后台管理页 + WC 渲染",
+  "tier": "community",
+  "script": "webcomponent/index.js",
+  "slots": [
+    { "name": "main-footer", "component": "hello-banner" }
+  ],
+  "adminMenu": [
+    { "icon": "👋", "label": "Hello 插件", "path": "/", "component": "hello-admin" }
+  ]
+}
