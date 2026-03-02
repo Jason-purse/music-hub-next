@@ -180,64 +180,84 @@ export default function AdminPagesPage() {
               <div>暂无页面，点击右上角「新建页面」</div>
             </div>
           ) : (
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-50 text-xs text-gray-400 uppercase tracking-wide">
-                  <th className="text-left px-4 py-3 font-medium">标题</th>
-                  <th className="text-left px-4 py-3 font-medium">Slug</th>
-                  <th className="text-left px-4 py-3 font-medium">布局</th>
-                  <th className="text-left px-4 py-3 font-medium">状态</th>
-                  <th className="text-left px-4 py-3 font-medium">操作</th>
-                </tr>
-              </thead>
-              <tbody>
+            <>
+              {/* 移动端卡片列表 */}
+              <div className="sm:hidden divide-y divide-gray-50">
                 {pages.map(page => (
-                  <tr key={page.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{page.title}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500 font-mono">
-                      <a
-                        href={`/pages/${page.slug}`}
-                        target="_blank"
-                        className="hover:text-indigo-500 hover:underline"
-                      >
-                        /pages/{page.slug}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
-                      {layoutLabels[page.layout] || page.layout}
-                    </td>
-                    <td className="px-4 py-3">
+                  <div key={page.id} className="px-4 py-3 space-y-1.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-gray-800">{page.title}</span>
                       <button
                         onClick={() => handleTogglePublish(page)}
-                        className={`text-xs px-2 py-1 rounded-full font-medium transition ${
-                          page.published
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        className={`shrink-0 text-xs px-2 py-1 rounded-full font-medium transition ${
+                          page.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                         }`}
                       >
                         {page.published ? '已发布' : '草稿'}
                       </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/pages/${page.id}/edit`}
-                          className="text-sm text-indigo-500 hover:underline"
-                        >
-                          编辑
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(page.id, page.title)}
-                          className="text-sm text-red-400 hover:text-red-600"
-                        >
-                          删除
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                    </div>
+                    <a
+                      href={`/pages/${page.slug}`}
+                      target="_blank"
+                      className="block text-xs text-gray-400 font-mono hover:text-indigo-500 truncate"
+                    >
+                      /pages/{page.slug}
+                    </a>
+                    <div className="flex items-center gap-3 pt-0.5">
+                      <span className="text-xs text-gray-400">{layoutLabels[page.layout] || page.layout}</span>
+                      <Link href={`/admin/pages/${page.id}/edit`} className="text-xs text-indigo-500 hover:underline">编辑</Link>
+                      <button onClick={() => handleDelete(page.id, page.title)} className="text-xs text-red-400 hover:text-red-600">删除</button>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* 桌面端表格 */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-50 text-xs text-gray-400 uppercase tracking-wide">
+                      <th className="text-left px-4 py-3 font-medium">标题</th>
+                      <th className="text-left px-4 py-3 font-medium">Slug</th>
+                      <th className="text-left px-4 py-3 font-medium">布局</th>
+                      <th className="text-left px-4 py-3 font-medium">状态</th>
+                      <th className="text-left px-4 py-3 font-medium">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pages.map(page => (
+                      <tr key={page.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition">
+                        <td className="px-4 py-3 text-sm font-medium text-gray-800">{page.title}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500 font-mono">
+                          <a href={`/pages/${page.slug}`} target="_blank" className="hover:text-indigo-500 hover:underline">
+                            /pages/{page.slug}
+                          </a>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{layoutLabels[page.layout] || page.layout}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleTogglePublish(page)}
+                            className={`text-xs px-2 py-1 rounded-full font-medium transition ${
+                              page.published
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                            }`}
+                          >
+                            {page.published ? '已发布' : '草稿'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Link href={`/admin/pages/${page.id}/edit`} className="text-sm text-indigo-500 hover:underline">编辑</Link>
+                            <button onClick={() => handleDelete(page.id, page.title)} className="text-sm text-red-400 hover:text-red-600">删除</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
