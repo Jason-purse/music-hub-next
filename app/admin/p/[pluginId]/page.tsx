@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getPluginById, getPluginRawManifest } from '@/lib/plugins-db'
+import { PluginWCHost } from '@/components/PluginWCHost'
 
 export default async function AdminPluginPage({ params }: { params: Promise<{ pluginId: string }> }) {
   const { pluginId } = await params
@@ -12,11 +13,15 @@ export default async function AdminPluginPage({ params }: { params: Promise<{ pl
   if (!menuDecl) return notFound()
 
   const scriptUrl = raw.script ? `/api/plugins/${pluginId}/script` : null
-  const configAttr = JSON.stringify(plugin.userConfig ?? {}).replace(/"/g, '&quot;')
-  const html = [
-    scriptUrl ? `<script src="${scriptUrl}" type="module" defer></script>` : '',
-    `<${menuDecl.component} plugin-config="${configAttr}"></${menuDecl.component}>`,
-  ].join('\n')
 
-  return <div className="p-6 min-h-full" dangerouslySetInnerHTML={{ __html: html }} />
+  return (
+    <div className="p-6 min-h-full">
+      <PluginWCHost
+        pluginId={pluginId}
+        tagName={menuDecl.component}
+        scriptUrl={scriptUrl}
+        config={plugin.userConfig ?? {}}
+      />
+    </div>
+  )
 }

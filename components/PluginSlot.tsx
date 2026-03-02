@@ -1,11 +1,13 @@
 /**
- * PluginSlot — 服务端插件注入点 (Server Component)
+ * PluginSlot — 服务端命名注入点 (Server Component)
+ * 读取 DB，找出对应 slot 的启用插件，委托 PluginWCHost 安全渲染
  *
- * 用法：
+ * 用法：在任意 Server Component 中
  *   <PluginSlot name="player-footer" />
- *   <PluginSlot name="nav-actions" className="flex items-center gap-2" />
+ *   <PluginSlot name="nav-actions" className="flex gap-2" />
  */
 import { getSlotPlugins } from '@/lib/plugin-system/registry'
+import { PluginWCHost } from './PluginWCHost'
 
 interface Props {
   name: string
@@ -18,28 +20,16 @@ export async function PluginSlot({ name, className }: Props) {
 
   return (
     <div data-plugin-slot={name} className={className}>
-      {items.map(({ plugin, decl }) => {
-        const tag = decl.component
-        const extraAttrs = Object.entries(decl.props ?? {})
-          .map(([k, v]) => `${k}="${String(v)}"`)
-          .join(' ')
-        const configAttr = JSON.stringify(plugin.userConfig).replace(/"/g, '&quot;')
-
-        const html = [
-          plugin.scriptUrl
-            ? `<script src="${plugin.scriptUrl}" type="module" data-plugin-script="${plugin.id}" defer></script>`
-            : '',
-          `<${tag} plugin-config="${configAttr}" ${extraAttrs}></${tag}>`,
-        ].join('\n')
-
-        return (
-          <div
-            key={`${plugin.id}-${tag}`}
-            data-plugin-id={plugin.id}
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
-        )
-      })}
+      {items.map(({ plugin, decl }) => (
+        <PluginWCHost
+          key={`${plugin.id}-${decl.component}`}
+          pluginId={plugin.id}
+          tagName={decl.component}
+          scriptUrl={plugin.scriptUrl}
+          config={plugin.userConfig}
+          attrs={decl.props}
+        />
+      ))}
     </div>
   )
 }
