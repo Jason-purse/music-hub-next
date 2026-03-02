@@ -93,8 +93,8 @@ export default function AdminPagesPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-bold text-xl text-gray-800">🎨 自定义页面</h1>
-          <p className="text-sm text-gray-400 mt-0.5">通过拖拽积木块自由组合页面布局</p>
+          <h1 className="font-bold text-xl text-gray-800">🎨 自定义模块</h1>
+          <p className="text-sm text-gray-400 mt-0.5">通过拖拽积木块自由搭建自定义模块</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
@@ -108,7 +108,7 @@ export default function AdminPagesPage() {
         <span className="text-2xl">🎨</span>
         <div>
           <div className="font-medium text-indigo-800">自定义页面</div>
-          <div className="text-sm text-indigo-600">通过拖拽积木块自由组合页面布局，访问路径为 /pages/[slug]</div>
+          <div className="text-sm text-indigo-600">通过拖拽积木块自由搭建自定义模块，访问路径为 /pages/[slug]</div>
         </div>
       </div>
 

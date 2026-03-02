@@ -49,8 +49,8 @@ export default function BuiltInPagesPage() {
   return (
     <div className="p-6 md:p-8">
       <div className="mb-6">
-        <h1 className="text-xl font-semibold text-gray-800">🏠 内置页面</h1>
-        <p className="text-sm text-gray-400 mt-1">系统内置的功能页面，结构由代码定义，可通过配置调整展示内容</p>
+        <h1 className="text-xl font-semibold text-gray-800">🏠 内置模块</h1>
+        <p className="text-sm text-gray-400 mt-1">系统内置的功能模块，结构由代码定义，可通过配置调整展示内容</p>
       </div>
 
       <div className="space-y-3">
